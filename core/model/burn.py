@@ -1,17 +1,37 @@
 import subprocess
-
+import threading
 from core.utils.msg import CustomDialog
+import sh
 
 
 class Burn:
 
     def __init__(self, mcu_type, file_full_name):
-        self.usb_devs = {"rp2040": "Raspberry Pi RP2", "": ""}
+        self.usb_devs = {
+            "rp2040": "Raspberry Pi RP2 Boot",
+            "stm32": "STMicroelectronics STM Device in DFU Mode",
+        }
         self.file_path = file_full_name
         self.mcu_type = mcu_type
 
     def check_flash_finish(self, result):
         if "Rebooting device" in result:
+            return True
+        elif "Resetting USB to switch back to runtime mode" in result:
+            return True
+        return False
+
+    def check_firmware_suffix(self):
+        # 定义允许的文件后缀
+        allowed_suffixes = {
+            "rp2040": [".uf2"],
+            "stm32": [".bin", ".hex"],
+        }
+        # 获取文件后缀
+        file_suffix = self.file_path.split(".")[-1]
+
+        # 检查文件后缀是否在允许的后缀列表中
+        if f".{file_suffix}" in allowed_suffixes.get(self.mcu_type, []):
             return True
         return False
 
@@ -22,33 +42,37 @@ class Burn:
 
         for line in result.stdout.splitlines():
             if dev in line:
-                # 找到包含 'Raspberry Pi RP2' 的行后，提取 ID 号
                 self.parts = line.split()
-                # ID 通常在第四个位置（索引为 3）
                 usb_id = self.parts[5]
                 return usb_id
         return None
 
-    def flash_device(self, usb_id):
-        result = subprocess.run(
-            [
-                "python3",
-                "flash_usb.py",
-                "-t" + self.mcu_type,
-                "-d" + usb_id,
-                self.file_path,
-                "--no-sudo",
-            ],
-            capture_output=True,
-            text=True,
-        )
-        return self.check_flash_finish(result.stderr)
+    def flash_device(self):
+        try:
+            output = sh.bash("tool/usb_flash.sh", self.mcu_type, self.file_path)
+            print("输出:", output)
+        except sh.ErrorReturnCode as e:
+            print("命令执行失败:", e)
 
     def flash(self, parent=None):
-        usb_id = self.check_lsusb_for_dev_boot()
-        dialog = CustomDialog(parent)
+        dialog = CustomDialog(parent)  # todo, 考虑放到别的地方
 
-        if usb_id != None:
-            dialog.show_burn_result(self.flash_device(usb_id))
-            return
-        dialog.show_show_warning("错误：设备未进入烧录模式")
+        if not self.check_firmware_suffix():
+            dialog.show_warning("错误：不是支持烧录的固件")
+            return False
+
+        if self.check_lsusb_for_dev_boot() == None:
+            dialog.show_warning("错误：设备未进入烧录模式")
+            return False
+
+        # todo, 放置于线程中去处理，且烧录期间锁屏，信息输出到消息框中
+        self.flash_device()
+
+        # print(usb_id)
+        # flash_thread = threading.Thread(target=self.flash_device)
+        # flash_thread.start()
+
+        # if usb_id != None:
+        #     dialog.show_burn_result(self.flash_device(usb_id))
+        #     return
+        # dialog.show_show_warning("错误：设备未进入烧录模式")

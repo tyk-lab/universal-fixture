@@ -28,7 +28,7 @@ class CustomDialog(QDialog):
         self.text_label = QLabel(self)
 
         # 调整对话框大小
-        self.setFixedSize(300, 150)
+        # self.setFixedSize(300, 150)
 
         # 将图标和文本添加到水平布局中
         self.h_layout.addWidget(self.icon_label)
@@ -42,7 +42,11 @@ class CustomDialog(QDialog):
         button.clicked.connect(self.accept)  # 关闭对话框
         self.main_layout.addWidget(button)
 
-    def show_show_warning(self, info):
+    def show_info(self, info):
+        self.text_label.setText(info)
+        self.exec()
+
+    def show_warning(self, info):
         icon = self.style().standardIcon(QStyle.StandardPixmap.SP_MessageBoxWarning)
         self.icon_label.setPixmap(icon.pixmap(32, 32))
         self.text_label.setText(info)
