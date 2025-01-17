@@ -45,6 +45,7 @@ class CustomDialog(QDialog):
         self.main_layout.addWidget(button)
 
     def show_info(self, info):
+        self.text_label.setStyleSheet("color: black;")
         self.text_label.setText(info)
         self.exec()
 
