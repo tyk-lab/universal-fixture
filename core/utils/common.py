@@ -12,6 +12,8 @@ class GlobalComm:
 
     language = ""
 
+    test_enable = True
+
     @staticmethod
     def get_langdic_val(sub_key_str, obj_str):
         return GlobalComm.language_json[GlobalComm.language][sub_key_str][obj_str]

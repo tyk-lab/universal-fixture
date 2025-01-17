@@ -19,13 +19,15 @@ from PyQt6.QtCore import Qt
 
 from core.utils.msg import CustomDialog
 from core.utils.common import GlobalComm
-from core.utils.parse import parse_flash_info
+from core.utils.parse import parse_cfg_flash_info
 from core.model.burn import Burn
 
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+
+        self.dialog = CustomDialog()
 
         self.loading_cfg()
         self.load_current_languag()
@@ -138,6 +140,9 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(main_widget)
 
     ##################### Function function #######################
+    def update_language_ui(self):
+        os.execl(sys.executable, sys.executable, *sys.argv)
+
     def loading_cfg(self):
         result = GlobalComm.load_json_cfg()
         if not result:
@@ -157,6 +162,39 @@ class MainWindow(QMainWindow):
         else:
             self.language = GlobalComm.setting_json["language"]
 
+    def get_flash_info(self, file_name):
+        # 获取文件所在目录
+        directory = os.path.dirname(file_name)
+
+        # 查找目录下的cfg文件
+        cfg_files = [f for f in os.listdir(directory) if f.endswith(".cfg")]
+
+        if cfg_files:
+            self.cfg_file_path = os.path.join(directory, cfg_files[0])
+            self.message_box.append(
+                GlobalComm.get_langdic_val("view", "select_cfg_file")
+                + f"{self.cfg_file_path}"
+            )
+
+            board, self.mcu, file_suffix = parse_cfg_flash_info(self.cfg_file_path)
+            self.message_box.append(
+                f"Board: {board}\t"
+                + f"MCU: {self.mcu}\t"
+                + f" File Suffix: {file_suffix}"
+            )
+
+            if GlobalComm.test_enable:
+                print(f"Board: {board}\r\n")
+                print(f"MCU: {self.mcu}\r\n")
+                print(f"File Suffix: {file_suffix}\r\n")
+        else:
+            self.message_box.append(
+                GlobalComm.get_langdic_val("error_tip", "err_cfg_file_not_found")
+            )
+            self.dialog.show_warning(
+                GlobalComm.get_langdic_val("error_tip", "err_cfg_file_not_found")
+            )
+
     ##################### event #######################
     def on_open_file(self):
         default_directory = "firmware"
@@ -164,38 +202,27 @@ class MainWindow(QMainWindow):
         # todo, 可能要区分后缀根据配置
         file_name, _ = QFileDialog.getOpenFileName(
             self,
-            "打开文件",
+            GlobalComm.get_langdic_val("view", "open_file"),
             default_directory,
-            "烧录固件 (*.bin *.uf2)",  # 默认能打开常规的所有固件格式
+            GlobalComm.setting_json["support_firmware"],
         )
 
         if file_name:
             self.file_edit.setText(file_name)
-            self.message_box.append(f"已选择文件: {file_name}")
-
-            # 获取文件所在目录
-            directory = os.path.dirname(file_name)
-
-            # 查找目录下的cfg文件
-            cfg_files = [f for f in os.listdir(directory) if f.endswith(".cfg")]
-
-            if cfg_files:
-                # 如果找到多个cfg文件，可以根据需要选择一个
-                # 这里假设选择第一个找到的cfg文件
-                self.cfg_file_path = os.path.join(directory, cfg_files[0])
-                self.message_box.append(f"已选择配置文件: {self.cfg_file_path}")
-
-                # 测试解读文件
-                board, mcu, file_suffix = parse_flash_info(self.cfg_file_path)
-                print(f"Board: {board}")
-                print(f"MCU: {mcu}")
-                print(f"File Suffix: {file_suffix}")
-            else:
-                self.message_box.append("未找到配置文件")
+            self.message_box.append(
+                GlobalComm.get_langdic_val("view", "select_file") + f"{file_name}"
+            )
+            self.get_flash_info(file_name)
 
     def on_upload_firmware(self):
-        burn = Burn("rp2040", self.file_edit.text())
-        burn.flash(self)
+        if self.file_edit.text() and self.mcu:
+            burn = Burn(self.mcu, self.file_edit.text())
+            burn.flash()
+            return
+
+        self.dialog.show_warning(
+            GlobalComm.get_langdic_val("error_tip", "err_not_found_firmware")
+        )
 
     def on_action_toggled(self, checked):
         # 获取触发信号的 QAction
@@ -226,8 +253,7 @@ class MainWindow(QMainWindow):
         self.update_language_ui()
 
     def on_show_about(self):
-        dialog = CustomDialog()
-        dialog.show_info(GlobalComm.get_langdic_val("view", "about_text"))
+        self.dialog.show_info(GlobalComm.get_langdic_val("view", "about_text"))
 
     @staticmethod
     def on_exit_app():

@@ -1,5 +1,7 @@
 import subprocess
 import threading
+
+from core.utils.common import GlobalComm
 from core.utils.msg import CustomDialog
 import sh
 
@@ -7,10 +9,7 @@ import sh
 class Burn:
 
     def __init__(self, mcu_type, file_full_name):
-        self.usb_devs = {
-            "rp2040": "Raspberry Pi RP2 Boot",
-            "stm32": "STMicroelectronics STM Device in DFU Mode",
-        }
+        self.usb_devs = GlobalComm.setting_json["support_dev"]
         self.file_path = file_full_name
         self.mcu_type = mcu_type
 
@@ -21,12 +20,10 @@ class Burn:
             return True
         return False
 
+    # 解析时判断
     def check_firmware_suffix(self):
         # 定义允许的文件后缀
-        allowed_suffixes = {
-            "rp2040": [".uf2"],
-            "stm32": [".bin", ".hex"],
-        }
+        allowed_suffixes = GlobalComm.setting_json["support_suffixes"]
         # 获取文件后缀
         file_suffix = self.file_path.split(".")[-1]
 
@@ -54,15 +51,19 @@ class Burn:
         except sh.ErrorReturnCode as e:
             print("命令执行失败:", e)
 
-    def flash(self, parent=None):
-        dialog = CustomDialog(parent)  # todo, 考虑放到别的地方
+    def flash(self):
+        dialog = CustomDialog()  # todo, 考虑放到别的地方
 
         if not self.check_firmware_suffix():
-            dialog.show_warning("错误：不是支持烧录的固件")
+            dialog.show_warning(
+                GlobalComm.get_langdic_val("error_tip", "err_not_support_firmware")
+            )
             return False
 
         if self.check_lsusb_for_dev_boot() == None:
-            dialog.show_warning("错误：设备未进入烧录模式")
+            dialog.show_warning(
+                GlobalComm.get_langdic_val("error_tip", "err_not_in_boot")
+            )
             return False
 
         # todo, 放置于线程中去处理，且烧录期间锁屏，信息输出到消息框中

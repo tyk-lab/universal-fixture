@@ -1,4 +1,18 @@
 {
     "language": "zh",
-    "loading_gif": "cfg/loading.gif"
+    "loading_gif": "cfg/loading.gif",
+    "support_firmware": "固件 (*.bin *.uf2)",
+    "support_dev": {
+        "rp2040": "Raspberry Pi RP2 Boot",
+        "stm32": "STMicroelectronics STM Device in DFU Mode"
+    },
+    "support_suffixes": {
+        "rp2040": [
+            ".uf2"
+        ],
+        "stm32": [
+            ".bin",
+            ".hex"
+        ]
+    }
 }

@@ -2,7 +2,7 @@ import configparser
 import re
 
 
-def parse_flash_info(file_path):
+def parse_cfg_flash_info(file_path):
     # 创建一个 ConfigParser 对象
     config = configparser.ConfigParser()
 
@@ -45,7 +45,7 @@ def parse_flash_info(file_path):
 
 
 # 示例调用(debug)
-# board, mcu, file_suffix = parse_flash_info(
+# board, mcu, file_suffix = parse_cfg_flash_info(
 #     "/home/test/Test/core/utils/klipper_printer.cfg"
 # )
 # print(f"Board: {board}")
