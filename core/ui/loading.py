@@ -7,6 +7,8 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QMovie
 from PyQt6.QtCore import Qt
 
+from core.utils.common import GlobalComm
+
 
 class LoadingPanel:
     def __init__(self, parent=None) -> None:
@@ -27,16 +29,16 @@ class LoadingPanel:
         self.loading_label.setMovie(self.loading_movie)
 
         # Add loading animation to overlay
-        self.loading_label.setAlignment(Qt.AlignCenter)  # Center display
+        self.loading_label.setAlignment(Qt.AlignmentFlag.AlignCenter)  # Center display
         self.overlay_layout = QVBoxLayout(self.overlay)
         self.overlay_layout.addWidget(self.loading_label)
 
-    def run_loading_git(self):
+    def run_git(self):
         self.loading_label.setVisible(True)
         self.overlay.setVisible(True)
         self.loading_movie.start()
 
-    def stop_loading_gif(self):
+    def stop_gif(self):
         self.loading_movie.stop()
         self.loading_label.setVisible(False)
         self.overlay.setVisible(False)

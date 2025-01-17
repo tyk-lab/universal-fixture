@@ -11,6 +11,8 @@ from PyQt6.QtGui import QPixmap
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QStyle
 
+import core.utils.common
+
 
 class CustomDialog(QDialog):
     def __init__(self, parent=None):
@@ -53,18 +55,21 @@ class CustomDialog(QDialog):
         self.text_label.setStyleSheet("color: red;")
         self.exec()
 
-    def show_burn_result(self, result):
-        # 根据结果设置图标和文本
+    def show_flash_result(self, result):
         if result:
             icon = self.style().standardIcon(
                 QStyle.StandardPixmap.SP_MessageBoxInformation
             )
             self.icon_label.setPixmap(icon.pixmap(32, 32))
-            self.text_label.setText("烧录成功")
+            self.text_label.setText(
+                core.utils.common.GlobalComm.get_langdic_val("view", "flash_ok")
+            )
             self.text_label.setStyleSheet("color: green;")
         else:
             icon = self.style().standardIcon(QStyle.StandardPixmap.SP_MessageBoxWarning)
             self.icon_label.setPixmap(icon.pixmap(32, 32))
-            self.text_label.setText("烧录失败")
+            self.text_label.setText(
+                core.utils.common.GlobalComm.get_langdic_val("view", "flash_err")
+            )
             self.text_label.setStyleSheet("color: red;")
         self.exec()

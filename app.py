@@ -17,17 +17,15 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QAction
 from PyQt6.QtCore import Qt
 
+from core.model.usb_flash import UsbFlash
 from core.utils.msg import CustomDialog
 from core.utils.common import GlobalComm
 from core.utils.parse import parse_cfg_flash_info
-from core.model.burn import Burn
 
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-
-        self.dialog = CustomDialog()
 
         self.loading_cfg()
         self.load_current_languag()
@@ -139,6 +137,10 @@ class MainWindow(QMainWindow):
         # 设置主部件
         self.setCentralWidget(main_widget)
 
+        # 初始化其他要素
+        self.dialog = CustomDialog(main_widget)
+        self.usb_flash = UsbFlash(self.message_box, self.dialog, main_widget)
+
     ##################### Function function #######################
     def update_language_ui(self):
         os.execl(sys.executable, sys.executable, *sys.argv)
@@ -180,13 +182,13 @@ class MainWindow(QMainWindow):
             self.message_box.append(
                 f"Board: {board}\t"
                 + f"MCU: {self.mcu}\t"
-                + f" File Suffix: {file_suffix}"
+                + f" File Suffix: {file_suffix}\r"
             )
 
             if GlobalComm.test_enable:
-                print(f"Board: {board}\r\n")
-                print(f"MCU: {self.mcu}\r\n")
-                print(f"File Suffix: {file_suffix}\r\n")
+                print(f"Board: {board}\r")
+                print(f"MCU: {self.mcu}\r")
+                print(f"File Suffix: {file_suffix}\r")
         else:
             self.message_box.append(
                 GlobalComm.get_langdic_val("error_tip", "err_cfg_file_not_found")
@@ -198,8 +200,8 @@ class MainWindow(QMainWindow):
     ##################### event #######################
     def on_open_file(self):
         default_directory = "firmware"
+        self.message_box.clear()
 
-        # todo, 可能要区分后缀根据配置
         file_name, _ = QFileDialog.getOpenFileName(
             self,
             GlobalComm.get_langdic_val("view", "open_file"),
@@ -216,13 +218,11 @@ class MainWindow(QMainWindow):
 
     def on_upload_firmware(self):
         if self.file_edit.text() and self.mcu:
-            burn = Burn(self.mcu, self.file_edit.text())
-            burn.flash()
-            return
-
-        self.dialog.show_warning(
-            GlobalComm.get_langdic_val("error_tip", "err_not_found_firmware")
-        )
+            self.usb_flash.exec(self.mcu, self.file_edit.text())
+        else:
+            self.dialog.show_warning(
+                GlobalComm.get_langdic_val("error_tip", "err_not_select_file")
+            )
 
     def on_action_toggled(self, checked):
         # 获取触发信号的 QAction

@@ -24,13 +24,17 @@
             "open_file":"打开文件",
             
             "select_file": "已选择文件",
-            "select_cfg_file": "已选择配置文件"
+            "select_cfg_file": "已选择配置文件",
+
+            "flash_ok": "烧录成功",
+            "flash_err": "烧录失败"
         },
         "error_tip": {
-            "err_cfg_file_not_found": "当前固件缺失配置文件",
-            "err_not_found_firmware": "未选择固件",
+            "err_cfg_file_not_found": "错误：当前固件缺失配置文件",
+            "err_not_found_firmware": "错误：未选择固件",
             "err_not_in_boot": "错误：设备未进入烧录模式",
-            "err_not_support_firmware": "错误：不是支持烧录的固件格式"
+            "err_not_support_firmware": "错误：不是支持烧录的固件格式",
+            "err_not_select_file": "错误：未选择固件，无法进行烧录"
         }
     },
 

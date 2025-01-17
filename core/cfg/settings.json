@@ -1,6 +1,6 @@
 {
     "language": "zh",
-    "loading_gif": "cfg/loading.gif",
+    "loading_gif": "core/cfg/loading.gif",
     "support_firmware": "固件 (*.bin *.uf2)",
     "support_dev": {
         "rp2040": "Raspberry Pi RP2 Boot",
