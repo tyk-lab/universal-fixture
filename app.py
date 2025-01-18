@@ -1,6 +1,7 @@
 import os
 import sys
 import locale
+import webbrowser
 
 from PyQt6.QtWidgets import (
     QApplication,
@@ -130,6 +131,7 @@ class MainWindow(QMainWindow):
         action_layout.addWidget(test_button)
 
         burn_button.clicked.connect(self.on_upload_firmware)
+        test_button.clicked.connect(self.on_test)
 
         # 第三行及以下：消息框
         self.message_box = QTextEdit()
@@ -163,6 +165,7 @@ class MainWindow(QMainWindow):
                 break
         else:
             self.action_fixture.setChecked(True)
+            GlobalComm.save_json_setting("cur_test_mode", "fixture")
 
     def load_current_languag(self):
         if GlobalComm.setting_json["language"] == "":
@@ -211,6 +214,10 @@ class MainWindow(QMainWindow):
                 GlobalComm.get_langdic_val("error_tip", "err_cfg_file_not_found")
             )
 
+    def open_klipper_webpage():
+        url = "http://localhost:81"
+        webbrowser.open(url, new=2)
+
     ##################### event #######################
     def on_open_file(self):
         default_directory = "firmware"
@@ -237,6 +244,20 @@ class MainWindow(QMainWindow):
             self.dialog.show_warning(
                 GlobalComm.get_langdic_val("error_tip", "err_not_select_file")
             )
+
+    # todo
+    def on_test(self):
+        cur_mode = GlobalComm.setting_json["cur_test_mode"]
+        keys = list(self.action_list.keys())
+        i = 0
+
+        # 按self.action_list的次序去执行函数
+        if cur_mode == keys[0]:
+            pass
+        elif cur_mode == keys[1]:
+            pass
+        else:  # 单次测试或其他情况，都打开网页
+            self.open_klipper_webpage()
 
     def on_action_toggled(self, checked):
         action = self.sender()
