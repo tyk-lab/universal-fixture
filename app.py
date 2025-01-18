@@ -87,9 +87,15 @@ class MainWindow(QMainWindow):
 
         # 连接信号到槽函数
         self.action_fixture.triggered.connect(self.on_action_toggled)
-        self.action_fixture.setChecked(True)
         self.action_comm.triggered.connect(self.on_action_toggled)
         self.action_sigle.triggered.connect(self.on_action_toggled)
+
+        self.action_list = {
+            "fixture": self.action_fixture,
+            "comm": self.action_comm,
+            "sigle": self.action_sigle,
+        }
+        self.init_test_mode()
 
         # 将菜单项添加到模式菜单
         mode_menu.addAction(self.action_fixture)
@@ -149,6 +155,14 @@ class MainWindow(QMainWindow):
         result = GlobalComm.load_json_cfg()
         if not result:
             MainWindow.on_exit_app()
+
+    def init_test_mode(self):
+        for key, value in self.action_list.items():
+            if GlobalComm.setting_json["cur_test_mode"] is key:
+                value.setChecked(True)
+                break
+        else:
+            self.action_fixture.setChecked(True)
 
     def load_current_languag(self):
         if GlobalComm.setting_json["language"] == "":
@@ -225,16 +239,12 @@ class MainWindow(QMainWindow):
             )
 
     def on_action_toggled(self, checked):
-        # 获取触发信号的 QAction
         action = self.sender()
-        if checked:
-            # 取消其他 QAction 的选中状态
-            if action is not self.action_fixture:
-                self.action_fixture.setChecked(False)
-            if action is not self.action_comm:
-                self.action_comm.setChecked(False)
-            if action is not self.action_sigle:
-                self.action_sigle.setChecked(False)
+        for key, value in self.action_list.items():
+            if action is value:
+                value.setChecked(True)
+                GlobalComm.save_json_setting("cur_test_mode", key)
+            value.setChecked(False)
 
     def on_set_language_en(self):
         self.language = "en"
