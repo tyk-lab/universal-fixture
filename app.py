@@ -188,6 +188,8 @@ class MainWindow(QMainWindow):
         # 查找目录下的cfg文件
         cfg_files = [f for f in os.listdir(directory) if f.endswith(".cfg")]
 
+        self.mcu_type = None
+
         if cfg_files:
             self.cfg_file_path = os.path.join(directory, cfg_files[0])
             self.message_box.append(
@@ -195,16 +197,16 @@ class MainWindow(QMainWindow):
                 + f"{self.cfg_file_path}"
             )
 
-            board, self.mcu, file_suffix = parse_cfg_flash_info(self.cfg_file_path)
+            board, self.mcu_type, file_suffix = parse_cfg_flash_info(self.cfg_file_path)
             self.message_box.append(
                 f"Board: {board}\t"
-                + f"MCU: {self.mcu}\t"
+                + f"MCU: {self.mcu_type}\t"
                 + f" File Suffix: {file_suffix}\r"
             )
 
             if GlobalComm.test_enable:
                 print(f"Board: {board}\r")
-                print(f"MCU: {self.mcu}\r")
+                print(f"MCU: {self.mcu_type}\r")
                 print(f"File Suffix: {file_suffix}\r")
         else:
             self.message_box.append(
@@ -238,8 +240,8 @@ class MainWindow(QMainWindow):
             self.get_flash_info(file_name)
 
     def on_upload_firmware(self):
-        if self.file_edit.text() and self.mcu:
-            self.usb_flash.exec(self.mcu, self.file_edit.text())
+        if self.file_edit.text() and self.mcu_type:
+            self.usb_flash.exec(self.mcu_type, self.file_edit.text())
         else:
             self.dialog.show_warning(
                 GlobalComm.get_langdic_val("error_tip", "err_not_select_file")
