@@ -1,44 +1,25 @@
-import sys
-from PyQt6.QtWidgets import QApplication, QFrame, QLabel, QVBoxLayout, QWidget
-from PyQt6.QtGui import QMovie
-from PyQt6.QtCore import Qt
+import threading
 
 
-class GifPlayer(QWidget):
-    def __init__(self):
-        super().__init__()
-
-        # Create a full screen overlay
-        self.overlay = QFrame(self)
-        self.overlay.setStyleSheet("background-color: rgba(128, 128, 128, 0.5);")
-        self.overlay.setGeometry(self.rect())  # Set overlay size
-        self.overlay.setVisible(False)
-
-        # 创建一个 QLabel 作为 GIF 显示的载体
-        self.label = QLabel(self)
-        self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)  # 居中对齐
-
-        # 创建 QMovie 对象，加载 GIF 文件
-        self.movie = QMovie("core/cfg/loading.gif")
-
-        # 设置 QLabel 使用 QMovie
-        self.label.setMovie(self.movie)
-
-        # 设置布局
-        self.overlay_layout = QVBoxLayout(self.overlay)
-        self.overlay_layout.addWidget(self.label)
-        self.setLayout(self.overlay_layout)
-
-        # 设置窗口属性
-        self.setWindowTitle("GIF 播放器")
-        self.resize(400, 300)
-
-        # 启动 GIF 动画
-        self.movie.start()
+def task():
+    print("定时任务正在执行...")
 
 
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    player = GifPlayer()
-    player.show()
-    sys.exit(app.exec())
+def start_timer():
+    # 计数器，用于记录执行次数
+    count = 0
+
+    def run_task():
+        nonlocal count
+        count += 1
+        if count <= 8:
+            task()
+            # 创建新的定时器
+            threading.Timer(1, run_task).start()
+
+    # 启动第一次定时任务
+    run_task()
+
+
+# 启动定时器
+start_timer()

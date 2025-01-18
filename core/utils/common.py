@@ -22,7 +22,7 @@ class GlobalComm:
     def load_json_cfg():
         result = False
 
-        print(os.getcwd())
+        # print(os.getcwd())
         try:
             with open(GlobalComm.setting_path, "r", encoding="utf-8") as f:
                 GlobalComm.setting_json = json.load(f)

@@ -18,6 +18,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QAction
 from PyQt6.QtCore import Qt
 
+from core.ui.run_test import TestRun
 from core.model.usb_flash import UsbFlash
 from core.utils.msg import CustomDialog
 from core.utils.common import GlobalComm
@@ -91,10 +92,11 @@ class MainWindow(QMainWindow):
         self.action_comm.triggered.connect(self.on_action_toggled)
         self.action_sigle.triggered.connect(self.on_action_toggled)
 
+        mode_list = GlobalComm.setting_json["test_mode"]
         self.action_list = {
-            "fixture": self.action_fixture,
-            "comm": self.action_comm,
-            "sigle": self.action_sigle,
+            mode_list["fixture"]: self.action_fixture,
+            mode_list["comm"]: self.action_comm,
+            mode_list["sigle"]: self.action_sigle,
         }
         self.init_test_mode()
 
@@ -159,13 +161,15 @@ class MainWindow(QMainWindow):
             MainWindow.on_exit_app()
 
     def init_test_mode(self):
+        cur = GlobalComm.setting_json["cur_test_mode"]
         for key, value in self.action_list.items():
-            if GlobalComm.setting_json["cur_test_mode"] is key:
+            if cur == key:
                 value.setChecked(True)
-                break
-        else:
-            self.action_fixture.setChecked(True)
-            GlobalComm.save_json_setting("cur_test_mode", "fixture")
+                GlobalComm.save_json_setting("cur_test_mode", key)
+                return
+
+        self.action_fixture.setChecked(True)
+        GlobalComm.save_json_setting("cur_test_mode", "fixture")
 
     def load_current_languag(self):
         if GlobalComm.setting_json["language"] == "":
@@ -216,9 +220,13 @@ class MainWindow(QMainWindow):
                 GlobalComm.get_langdic_val("error_tip", "err_cfg_file_not_found")
             )
 
-    def open_klipper_webpage():
-        url = "http://localhost:81"
+    def open_klipper_webpage(self):
+        url = GlobalComm.setting_json["klipper_web"]
         webbrowser.open(url, new=2)
+
+    def open_new_window(self):
+        self.new_window = TestRun()
+        self.new_window.show()
 
     ##################### event #######################
     def on_open_file(self):
@@ -250,14 +258,13 @@ class MainWindow(QMainWindow):
     # todo
     def on_test(self):
         cur_mode = GlobalComm.setting_json["cur_test_mode"]
-        keys = list(self.action_list.keys())
-        i = 0
+        mode_list = GlobalComm.setting_json["test_mode"]
 
         # 按self.action_list的次序去执行函数
-        if cur_mode == keys[0]:
+        if cur_mode == mode_list["fixture"]:
             pass
-        elif cur_mode == keys[1]:
-            pass
+        elif cur_mode == mode_list["comm"]:
+            self.open_new_window()
         else:  # 单次测试或其他情况，都打开网页
             self.open_klipper_webpage()
 
@@ -267,6 +274,7 @@ class MainWindow(QMainWindow):
             if action is value:
                 value.setChecked(True)
                 GlobalComm.save_json_setting("cur_test_mode", key)
+                continue
             value.setChecked(False)
 
     def on_set_language_en(self):

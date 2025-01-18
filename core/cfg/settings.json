@@ -1,7 +1,14 @@
 {
     "language": "zh",
     "loading_gif": "core/cfg/loading.gif",
+    "cur_test_mode": "comm",
+    "test_mode": {
+        "fixture": "fixture",
+        "comm": "comm",
+        "sigle": "sigle"
+    },
     "support_firmware": "固件 (*.bin *.uf2)",
+    "klipper_web": "http://localhost:81",
     "support_dev": {
         "rp2040": "Raspberry Pi RP2 Boot",
         "stm32": "STMicroelectronics STM Device in DFU Mode"

@@ -47,6 +47,7 @@ class CustomDialog(QDialog):
     def show_info(self, info):
         self.text_label.setStyleSheet("color: black;")
         self.text_label.setText(info)
+        self.text_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.exec()
 
     def show_warning(self, info):
