@@ -85,7 +85,7 @@ class TestRun(QWidget):
 
         self.klipper.reset_printer()
         self.last_result = self.result
-        self.comm_start_timer(self.klipper_connect_result)
+        self.comm_start_timer(12, self.klipper_connect_result)
 
     def klipper_connect_result(self, err=""):
         web_state = self.klipper.get_connect_info()
@@ -109,8 +109,9 @@ class TestRun(QWidget):
             self.make_line_data(raw_data, QColor("red"))
             return False
 
-        serial_id = str(self.last_result).replace("[", "").replace("]", "")
-        log = web_state["state_message"] + "    " + "\r\nid: " + serial_id
+        serial_id = "\n".join(self.last_result)
+        print(serial_id)
+        log = web_state["state_message"] + "    " + "\r\nserial id: \r\n" + serial_id
         raw_data = [
             GlobalComm.get_langdic_val("view", "test_result_ok"),
             info_type,
@@ -129,33 +130,21 @@ class TestRun(QWidget):
             items.append(item)
         self.model.insertRow(0, items)
 
-    def comm_start_timer(self, fun):
+    def comm_start_timer(self, init_time, fun):
         count = 0
 
         def run_task():
             nonlocal count
             count += 1
-            web_state = self.check()
-            print(count)
-            if not web_state and count <= 8:
-                print("run")
-                threading.Timer(1, self.check).start()
+            is_connect = self.klipper.is_connect()
+            if not is_connect and count <= init_time:
+                threading.Timer(1, run_task).start()
                 return
             else:
                 fun()
 
-        # 启动第一次定时任务
+        # first run
         run_task()
-
-    def check(self):
-        try:
-            web_state = self.klipper.get_connect_info()
-            print(web_state)
-            return web_state["state"] == "ready"
-        except KeyError as e:
-            return False
-        except Exception as e:
-            return False
 
     ##################### event #######################
     def on_init_test_data(self):

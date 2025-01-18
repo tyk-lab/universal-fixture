@@ -16,6 +16,15 @@ class KlipperService:
         web_state = self.printer.query_status("webhooks")
         return web_state
 
+    def is_connect(self):
+        try:
+            web_state = self.get_connect_info()
+            return web_state["state"] == "ready"
+        except KeyError as e:
+            return False
+        except Exception as e:
+            return False
+
     def get_sensor_info(self, sensor_type, key_str):
         list = []
         sensors = sensor_type
