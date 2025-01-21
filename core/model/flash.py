@@ -9,7 +9,7 @@ class Flash:
     def __init__(self, mcu_type, file_full_name):
         self.usb_devs = GlobalComm.setting_json["support_dev"]
         self.file_path = file_full_name
-        self.mcu_type = mcu_type
+        self.mcu_type = mcu_type.split("f")[0]
 
     def check_flash_finish(self, result):
         if "Rebooting device" in result:
@@ -24,7 +24,6 @@ class Flash:
         allowed_suffixes = GlobalComm.setting_json["support_suffixes"]
         # 获取文件后缀
         file_suffix = self.file_path.split(".")[-1]
-
         # 检查文件后缀是否在允许的后缀列表中
         if f".{file_suffix}" in allowed_suffixes.get(self.mcu_type, []):
             return True
