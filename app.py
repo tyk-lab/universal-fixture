@@ -225,8 +225,14 @@ class MainWindow(QMainWindow):
         webbrowser.open(url, new=2)
 
     def open_new_window(self):
-        self.new_window = TestRun(self.cfg_file_path)
-        self.new_window.show()
+        if self.cfg_file_path != "" and self.cfg_file_path != None:
+            self.new_window = TestRun(self.cfg_file_path)
+            self.new_window.show()
+            return
+
+        self.dialog.show_warning(
+            GlobalComm.get_langdic_val("error_tip", "err_not_select_cfg")
+        )
 
     ##################### event #######################
     def on_open_file(self):

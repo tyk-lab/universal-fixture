@@ -7,7 +7,16 @@ class KlipperService:
         self.printer = MoonrakerPrinter(GlobalComm.setting_json["klipper_web"])
 
     def reset_printer(self):
-        self.printer.send_gcode("FIRMWARE_RESTART")
+        try:
+            web_state = self.get_connect_info()
+            if web_state["state"] == "error":
+                self.printer.send_gcode("FIRMWARE_RESTART")
+            else:
+                self.printer.send_gcode("RESTART")
+        except KeyError as e:
+            return False
+        except Exception as e:
+            return False
 
     def reset_klipper(self):
         self.printer.send_gcode("RESTART")
@@ -19,10 +28,14 @@ class KlipperService:
         web_state = self.printer.query_status("webhooks")
         return web_state
 
+    # 检查过程中，如果是报错，自动重置
     def is_connect(self):
         try:
             web_state = self.get_connect_info()
-            return web_state["state"] == "ready"
+            state = web_state["state"]
+            if state == "error":
+                self.printer.send_gcode("FIRMWARE_RESTART")
+            return state == "ready"
         except KeyError as e:
             return False
         except Exception as e:

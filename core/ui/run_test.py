@@ -94,18 +94,20 @@ class TestRun(QWidget):
             self.config.write_config_to_file(config_text)
 
         # todo, 等完整连接
-        # self.klipper.reset_printer()
+        self.klipper.reset_printer()
         self.last_result = self.result
         return True
 
     ##################### Function function #######################
     def fixture_test(self):
-        # todo, 第一次进入，需要确认是否有完整的连接，避免上次的残留信息影响
         if self.update_cfg(True):
-            self.dev_test.init_model()
-            self.dev_test.test_btn()
+            self.comm_start_timer(12, self.fixture_test_result)
 
-    # todo, 优化发送reset klipper还是firmware reset, 提高检查效率
+    def fixture_test_result(self):
+        self.model.clear()
+        self.dev_test.init_model()
+        self.dev_test.test_btn()
+
     def comm_test(self):
         if self.update_cfg(False):
             self.comm_start_timer(12, self.klipper_connect_result)
@@ -130,7 +132,7 @@ class TestRun(QWidget):
                 str(result),
                 err + "\r\n",
             ]
-            self.make_line_data(raw_data, color=GlobalComm.err_color)
+            self.make_line_data(raw_data, GlobalComm.err_color)
             return False
 
         serial_id = "\n".join(self.last_result)
@@ -142,7 +144,7 @@ class TestRun(QWidget):
             serial_id,
             log,
         ]
-        self.make_line_data(raw_data, color=GlobalComm.ok_color)
+        self.make_line_data(raw_data, GlobalComm.ok_color)
         return True
 
     def make_line_data(self, row_data, background, head_insert=True):

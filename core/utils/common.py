@@ -15,8 +15,8 @@ class GlobalComm:
 
     test_enable = True
 
-    err_color = QColor(255, 182, 193)  # 浅红
-    ok_color = QColor(144, 238, 144)  # 浅绿
+    err_color = QColor(255, 182, 193)  # light red
+    ok_color = QColor(144, 238, 144)  # light green
 
     @staticmethod
     def get_langdic_val(sub_key_str, obj_str):

@@ -49,6 +49,8 @@
             "err_not_support_firmware": "错误：不是支持烧录的固件格式",
             "err_not_select_file": "错误：未选择固件，无法进行烧录",
 
+            "err_not_select_cfg": "错误：未选择配置固件，无法进行测试",
+
             "err_comm_no_device": "错误：检查不到设备，设备未连接",
             "err_lsusb": "错误：执行lsusb失败"
         }
