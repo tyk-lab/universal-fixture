@@ -93,7 +93,7 @@ class TestRun(QWidget):
 
             self.config.write_config_to_file(config_text)
 
-        self.klipper.reset_printer()
+        # self.klipper.reset_printer()
         self.last_result = self.result
         return True
 
@@ -105,8 +105,9 @@ class TestRun(QWidget):
     def fixture_test_result(self):
         self.model.clear()
         self.dev_test.init_model()
-        self.dev_test.test_btn()
-        self.dev_test.test_th()
+        self.dev_test.test_fan()
+        # self.dev_test.test_btn()
+        # self.dev_test.test_th()
 
     def comm_test(self):
         if self.update_cfg(False):

@@ -29,6 +29,8 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
+        self.cfg_file_path = ""
+
         self.loading_cfg()
         self.load_current_languag()
 
@@ -225,7 +227,7 @@ class MainWindow(QMainWindow):
         webbrowser.open(url, new=2)
 
     def open_new_window(self):
-        if self.cfg_file_path != "" and self.cfg_file_path != None:
+        if self.cfg_file_path != "":
             self.new_window = TestRun(self.cfg_file_path)
             self.new_window.show()
             return
