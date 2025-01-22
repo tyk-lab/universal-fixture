@@ -1,7 +1,7 @@
 {
     "language": "zh",
     "loading_gif": "core/cfg/loading.gif",
-    "cur_test_mode": "comm",
+    "cur_test_mode": "fixture",
     "test_mode": {
         "fixture": "fixture",
         "comm": "comm",

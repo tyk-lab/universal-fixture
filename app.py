@@ -225,7 +225,7 @@ class MainWindow(QMainWindow):
         webbrowser.open(url, new=2)
 
     def open_new_window(self):
-        self.new_window = TestRun()
+        self.new_window = TestRun(self.cfg_file_path)
         self.new_window.show()
 
     ##################### event #######################
@@ -261,9 +261,7 @@ class MainWindow(QMainWindow):
         mode_list = GlobalComm.setting_json["test_mode"]
 
         # 按self.action_list的次序去执行函数
-        if cur_mode == mode_list["fixture"]:
-            pass
-        elif cur_mode == mode_list["comm"]:
+        if cur_mode == mode_list["fixture"] or cur_mode == mode_list["comm"]:
             self.open_new_window()
         else:  # 单次测试或其他情况，都打开网页
             self.open_klipper_webpage()

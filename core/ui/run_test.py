@@ -9,22 +9,29 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QStandardItemModel, QStandardItem, QColor
 from PyQt6.QtCore import Qt
 
+from core.model.test_dev import DevTest
 from core.ui.table import CustomTableView
 from core.model.klipperpy import KlipperService
 from core.utils.common import GlobalComm
 from core.model.printer_cfg import PrinterConfig
 import threading
 import subprocess
+import os
 
 
 class TestRun(QWidget):
-    def __init__(self):
+    def __init__(self, cfg_path):
         super().__init__()
 
         self.klipper = KlipperService()
         self.config = PrinterConfig()
-        self.last_result = ""
+        self.dev_test = DevTest(self.klipper)
+        self.dev_test.set_update_callback(
+            self.make_line_data, self.delete_and_insert_line
+        )
 
+        self.last_result = ""
+        self.cfg_path = cfg_path
         self.init_ui()
 
     def init_ui(self):
@@ -41,12 +48,13 @@ class TestRun(QWidget):
         layout.addWidget(table_view)
 
         # 设置数据模型
-        self.model = QStandardItemModel(0, 3)  # 初始行数为0，列数为3
+        self.model = QStandardItemModel(0, 4)  # 初始行数为0，列数为4
         self.model.setHorizontalHeaderLabels(
             [
                 GlobalComm.get_langdic_val("view", "test_table_col1"),
                 GlobalComm.get_langdic_val("view", "test_table_col2"),
                 GlobalComm.get_langdic_val("view", "test_table_col3"),
+                GlobalComm.get_langdic_val("view", "test_table_col4"),
             ]
         )
 
@@ -66,26 +74,41 @@ class TestRun(QWidget):
         # 应用布局
         self.setLayout(layout)
 
-    ##################### Function function #######################
-    # todo
-    def fixture_test(self):
-        pass
+    def update_cfg(self, is_fixture):
+        self.config.set_cfg_mode(is_fixture)
 
-    def comm_test(self):
         self.result = self.config.get_serial_paths()
         if self.result is False:
             self.klipper_connect_result(
                 GlobalComm.get_langdic_val("error_tip", "err_comm_no_device")
             )
-            return
+            return False
 
+        # 避免重复写文件
         if self.last_result != self.result:
-            config_text = self.config.generate_config(self.result)
+            print("update cfg file")
+            config_text = self.config.generate_config(self.result, self.cfg_path)
+            if is_fixture:
+                self.config.cp_cfg_printer_dir(self.cfg_path)
+
             self.config.write_config_to_file(config_text)
 
-        self.klipper.reset_printer()
+        # todo, 等完整连接
+        # self.klipper.reset_printer()
         self.last_result = self.result
-        self.comm_start_timer(12, self.klipper_connect_result)
+        return True
+
+    ##################### Function function #######################
+    def fixture_test(self):
+        # todo, 第一次进入，需要确认是否有完整的连接，避免上次的残留信息影响
+        if self.update_cfg(True):
+            self.dev_test.init_model()
+            self.dev_test.test_btn()
+
+    # todo, 优化发送reset klipper还是firmware reset, 提高检查效率
+    def comm_test(self):
+        if self.update_cfg(False):
+            self.comm_start_timer(12, self.klipper_connect_result)
 
     def klipper_connect_result(self, err=""):
         web_state = self.klipper.get_connect_info()
@@ -104,23 +127,25 @@ class TestRun(QWidget):
             raw_data = [
                 GlobalComm.get_langdic_val("view", "test_result_err"),
                 info_type,
-                err + "\r\n" + str(result),
+                str(result),
+                err + "\r\n",
             ]
-            self.make_line_data(raw_data, QColor("red"))
+            self.make_line_data(raw_data, color=GlobalComm.err_color)
             return False
 
         serial_id = "\n".join(self.last_result)
         print(serial_id)
-        log = web_state["state_message"] + "    " + "\r\nserial id: \r\n" + serial_id
+        log = web_state["state_message"] + "    " + "\r\n"
         raw_data = [
             GlobalComm.get_langdic_val("view", "test_result_ok"),
             info_type,
+            serial_id,
             log,
         ]
-        self.make_line_data(raw_data, QColor("green"))
+        self.make_line_data(raw_data, color=GlobalComm.ok_color)
         return True
 
-    def make_line_data(self, row_data, background):
+    def make_line_data(self, row_data, background, head_insert=True):
         items = []
         for value in row_data:
             item = QStandardItem(str(value))
@@ -128,7 +153,28 @@ class TestRun(QWidget):
             item.setFlags(Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled)
             item.setBackground(background)
             items.append(item)
-        self.model.insertRow(0, items)
+
+        if head_insert:
+            self.model.insertRow(0, items)
+            return
+        self.model.appendRow(items)
+
+    def delete_and_insert_line(self, row, new_items, background):
+        # 检查行号是否在范围内
+        if 0 <= row < self.model.rowCount():
+            # 删除指定行
+            self.model.removeRow(row)
+            # 在同一位置插入新数据
+            items = []
+            for value in new_items:
+                item = QStandardItem(str(value))
+                # 设置不可编辑
+                item.setFlags(Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled)
+                item.setBackground(background)
+                items.append(item)
+            self.model.insertRow(row, items)
+        else:
+            print("行号超出范围")
 
     def comm_start_timer(self, init_time, fun):
         count = 0

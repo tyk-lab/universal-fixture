@@ -12,6 +12,9 @@ class KlipperService:
     def reset_klipper(self):
         self.printer.send_gcode("RESTART")
 
+    def run_test_gcode(self, cmd):
+        self.printer.send_gcode(cmd)
+
     def get_connect_info(self):
         web_state = self.printer.query_status("webhooks")
         return web_state
@@ -25,13 +28,14 @@ class KlipperService:
         except Exception as e:
             return False
 
-    def get_sensor_info(self, sensor_type, key_str):
-        list = []
-        sensors = sensor_type
-        sensors = self.printer.list_sensors(sensors)
-        dict = self.printer.query_sensors(sensors)
-        print(dict)
-        for name, info in dict.items():
-            val = info.get(key_str)
-            list.append((name, val))
-        return list
+    # return: sensors dicts
+    def get_info(self, key):
+        sensors = self.printer.list_sensors(key)
+        dicts = self.printer.query_sensors(sensors, key)
+        return dicts
+
+    # key: "gcode_button "
+    def list_names(self, key):
+        sensors = self.printer.list_sensors(key)
+        dicts = self.printer.query_sensors(sensors, key)
+        return list(dicts.keys())

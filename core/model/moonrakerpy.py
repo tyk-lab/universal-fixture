@@ -1,4 +1,3 @@
-# https://github.com/alchemyEngine/MoonrakerPy/tree/main
 from requests import get, post
 
 
@@ -127,6 +126,25 @@ class MoonrakerPrinter(object):
             if heading.startswith(sensor_sections):
                 sensors.append(heading)
         return sensors
+
+    def list_sensors(self, sensor_sections):
+        sensors = []
+        for heading in self.config:
+            if heading.startswith(sensor_sections):
+                sensors.append(heading)
+        return sensors
+
+    # key_str: "gcode_button ","temperature_sensor "....
+    # return: sensor info or remove key sensor info
+    def query_sensors(self, list_sensors, key_str=None):
+        url = "/printer/objects/query?" + "&".join(list_sensors)
+        renamed = self.get(url)["result"]["status"]
+
+        if key_str != None:
+            keys = [key.replace(key_str, "") for key in list(renamed.keys())]
+            items = list(renamed.values())
+            renamed = dict(zip(keys, items))
+        return renamed
 
     def get(self, url: str):
         """`response.get` wrapper. `url` concatenated to printer base address
