@@ -23,6 +23,22 @@ class DevInfo:
                 result_dict[key] = value["state"] == "RELEASED"
         return result_dict
 
+    def check_btn_state(self, state):
+        result_dict = self.get_btn_state()
+        result = all(value is state for value in result_dict.values())
+        log_dict = {}
+        # print(result_dict)
+        if not result:
+            # 判定结果
+            for key, value in result_dict.items():
+                log_dict[key] = "set " + str(state) + "  cur " + str(result_dict[key])
+                if value is not state:
+                    result_dict[key] = False
+                else:
+                    result_dict[key] = True
+            raise Exception(result_dict, log_dict)
+        return result
+
     def get_th_state(self):
         key = "temperature_sensor "
         result_dict = {}

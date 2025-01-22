@@ -17,7 +17,7 @@ class DevTest:
 
         # 存储对应类型的设备所在的行号
         self.tabal_index = {}
-
+        self.klipper = klipper
         self.dev = DevInfo(klipper, self.dev_dicts)
 
     def set_update_callback(self, add_row_callback, modify_row_callback):
@@ -43,27 +43,53 @@ class DevTest:
                 self.add_row_callback(raw_data, QColor("white"), False)
             self.tabal_index[key] = index_list
 
-    # todo
-    def test_btn(self):
-        # todo，控制万能板输出(每个指令必须有回复)
-        # todo,命令开始前，判断下两边的状态
-        key = "gcode_button "
-        result_dict = self.dev.get_btn_state()
+    def show_result(self, key, log_dict=None, result_dict=None):
         match_index_list = self.tabal_index[key]
 
-        print(result_dict)
         i = 0
-        # 遍历所有设备，更新结果
+        # 遍历对应的设备，更新结果
+        result = True
+        log = ""
         for item in self.dev_dicts[key]:
-            result = result_dict[item]
+            if result_dict != None:
+                result = result_dict[item]
+                log = log_dict[item]
+
             color = GlobalComm.err_color
             if result:
                 color = GlobalComm.ok_color
             raw_data = [
-                result,  # todo, result 可能要转为文字
+                result,
                 key,  # type
                 item,  # name
-                "",  # log
+                log,  # log
             ]
             self.modify_row_callback(match_index_list[i], raw_data, color)
             i += 1
+
+    def test_btn(self):
+        # todo,命令开始前，判断下两边的状态
+        klipper_state = self.klipper.is_connect(False)
+
+        if klipper_state:
+            try:
+                # todo，控制万能板输出(每个指令必须有回复)
+                self.dev.check_btn_state(True)
+
+                # todo，控制万能板关闭(每个指令必须有回复)
+                self.dev.check_btn_state(False)
+
+                self.show_result("gcode_button ")
+                return
+            except Exception as e:
+                result_dict = e.args[0]  # 从异常中获取列表
+                log_dict = e.args[1]
+                self.show_result("gcode_button ", log_dict, result_dict)
+        else:
+            raise Exception(
+                GlobalComm.get_langdic_val("exception_tip", "excep_connect")
+                + ": klipper state "
+                + str(klipper_state)
+                + "\r\n",
+                "fixture state ",
+            )

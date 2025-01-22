@@ -93,7 +93,6 @@ class TestRun(QWidget):
 
             self.config.write_config_to_file(config_text)
 
-        # todo, 等完整连接
         self.klipper.reset_printer()
         self.last_result = self.result
         return True

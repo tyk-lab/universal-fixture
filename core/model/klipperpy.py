@@ -29,11 +29,11 @@ class KlipperService:
         return web_state
 
     # 检查过程中，如果是报错，自动重置
-    def is_connect(self):
+    def is_connect(self, reset=True):
         try:
             web_state = self.get_connect_info()
             state = web_state["state"]
-            if state == "error":
+            if reset and state == "error":
                 self.printer.send_gcode("FIRMWARE_RESTART")
             return state == "ready"
         except KeyError as e:

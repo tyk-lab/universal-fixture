@@ -53,6 +53,9 @@
 
             "err_comm_no_device": "错误：检查不到设备，设备未连接",
             "err_lsusb": "错误：执行lsusb失败"
+        },
+        "exception_tip": {
+            "excep_connect": "异常：设备连接断开"
         }
     },
 
