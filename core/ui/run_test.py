@@ -49,14 +49,7 @@ class TestRun(QWidget):
 
         # 设置数据模型
         self.model = QStandardItemModel(0, 4)  # 初始行数为0，列数为4
-        self.model.setHorizontalHeaderLabels(
-            [
-                GlobalComm.get_langdic_val("view", "test_table_col1"),
-                GlobalComm.get_langdic_val("view", "test_table_col2"),
-                GlobalComm.get_langdic_val("view", "test_table_col3"),
-                GlobalComm.get_langdic_val("view", "test_table_col4"),
-            ]
-        )
+        self.reset_model_ui()
 
         # 将模型设置到表格视图
         table_view.setModel(self.model)
@@ -97,13 +90,24 @@ class TestRun(QWidget):
         self.last_result = self.result
         return True
 
+    def reset_model_ui(self):
+        self.model.clear()
+        self.model.setHorizontalHeaderLabels(
+            [
+                GlobalComm.get_langdic_val("view", "test_table_col1"),
+                GlobalComm.get_langdic_val("view", "test_table_col2"),
+                GlobalComm.get_langdic_val("view", "test_table_col3"),
+                GlobalComm.get_langdic_val("view", "test_table_col4"),
+            ]
+        )
+
     ##################### Function function #######################
     def fixture_test(self):
         if self.update_cfg(True):
             self.comm_start_timer(12, self.fixture_test_result)
 
     def fixture_test_result(self):
-        self.model.clear()
+        self.reset_model_ui()
         self.dev_test.init_model()
         self.dev_test.test_fan()
         # self.dev_test.test_btn()

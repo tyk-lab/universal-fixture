@@ -99,7 +99,9 @@ class DevInfo:
         # 判定结果
         for key, value in result_dict.items():
             cur_valid_val = value if value != None else fixture_dict[key]
-            print(cur_valid_val)
+            cur_valid_val = round(cur_valid_val, 3)
+
+            # print(cur_valid_val)
             log_dict[key] = "  cur rpm:  " + str(cur_valid_val)
             if (
                 cur_valid_val < expected_rpm[set_val] + tolerance
