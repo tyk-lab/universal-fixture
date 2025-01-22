@@ -106,6 +106,7 @@ class TestRun(QWidget):
         self.model.clear()
         self.dev_test.init_model()
         self.dev_test.test_btn()
+        self.dev_test.test_th()
 
     def comm_test(self):
         if self.update_cfg(False):

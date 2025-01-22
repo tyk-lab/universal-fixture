@@ -29,6 +29,7 @@ class KlipperService:
         return web_state
 
     # 检查过程中，如果是报错，自动重置
+    # reset如果是True，则判断中发生错误会固件重置
     def is_connect(self, reset=True):
         try:
             web_state = self.get_connect_info()

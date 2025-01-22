@@ -42,11 +42,27 @@ class DevInfo:
     def get_th_state(self):
         key = "temperature_sensor "
         result_dict = {}
-        if not self.dev_dicts[key]:
+        if self.dev_dicts[key] != []:
             sensor_dict = self.klipper.get_info(key)
             for key, value in sensor_dict.items():
                 result_dict[key] = value["temperature"]
         return result_dict
+
+    def check_th_state(self, th_val):
+        result_dict = self.get_th_state()
+        tolerance = 1
+        print(result_dict)
+        log_dict = {}
+        # 判定结果
+        for key, value in result_dict.items():
+            log_dict[key] = (
+                "fixture th: " + str(th_val) + "  cur " + str(result_dict[key])
+            )
+            if value < th_val + tolerance and value > th_val - tolerance:
+                result_dict[key] = True
+            else:
+                result_dict[key] = False
+        raise Exception(result_dict, log_dict)
 
     def run_fan(self, value):
         self.klipper.run_test_gcode("TEST_FANS FAN_SPEED=" + value)

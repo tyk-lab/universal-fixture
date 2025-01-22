@@ -93,3 +93,27 @@ class DevTest:
                 + "\r\n",
                 "fixture state ",
             )
+
+    def test_th(self):
+        # todo,命令开始前，判断下两边的状态
+        klipper_state = self.klipper.is_connect(False)
+
+        if klipper_state:
+            try:
+                # todo，获取万能板温感值
+                fixture_th = 23
+                self.dev.check_th_state(fixture_th)
+                self.show_result("temperature_sensor ")
+                return
+            except Exception as e:
+                result_dict = e.args[0]  # 从异常中获取列表
+                log_dict = e.args[1]
+                self.show_result("temperature_sensor ", log_dict, result_dict)
+        else:
+            raise Exception(
+                GlobalComm.get_langdic_val("exception_tip", "excep_connect")
+                + ": klipper state "
+                + str(klipper_state)
+                + "\r\n",
+                "fixture state ",
+            )
