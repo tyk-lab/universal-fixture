@@ -27,7 +27,7 @@ class DevInfo:
         result_dict = self.get_btn_state()
 
         # 判定结果
-        has_exception = all(value is not state for value in result_dict.values())
+        has_exception = not all(value is state for value in result_dict.values())
         log_dict = {}
         # print(result_dict)
 

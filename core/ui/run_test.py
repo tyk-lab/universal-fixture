@@ -110,8 +110,8 @@ class TestRun(QWidget):
         self.reset_model_ui()
         self.dev_test.init_model()
         self.dev_test.test_fan()
-        # self.dev_test.test_btn()
-        # self.dev_test.test_th()
+        self.dev_test.test_btn()
+        self.dev_test.test_th()
 
     def comm_test(self):
         if self.update_cfg(False):
