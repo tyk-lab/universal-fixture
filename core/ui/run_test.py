@@ -1,7 +1,5 @@
 from PyQt6.QtWidgets import (
-    QApplication,
     QPushButton,
-    QMainWindow,
     QVBoxLayout,
     QWidget,
     QTableView,
@@ -9,16 +7,15 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QStandardItemModel, QStandardItem
 from PyQt6.QtCore import Qt, QTimer
 
+from core.utils.common import GlobalComm
+from core.utils.msg import CustomDialog
 from core.utils.Test_thread import TestThread
 from core.ui.loading import LoadingPanel
 from core.model.test_dev import DevTest
 from core.ui.table import CustomTableView
 from core.model.klipperpy import KlipperService
-from core.utils.common import GlobalComm
 from core.model.printer_cfg import PrinterConfig
-import threading
 import subprocess
-import os
 
 
 class TestRun(QWidget):
@@ -33,6 +30,7 @@ class TestRun(QWidget):
         )
         self.creat_timer_test()
 
+        self.dialog = CustomDialog(self)
         self.last_result = ""
         self.cfg_path = cfg_path
         self.loading_git = LoadingPanel(self)
@@ -74,9 +72,13 @@ class TestRun(QWidget):
     def update_cfg(self, is_fixture):
         self.config.set_cfg_mode(is_fixture)
 
+        # 判断设备是否存在, 不存在弹窗警告
         self.result = self.config.get_serial_paths()
         if self.result is False:
             self.klipper_connect_result(
+                GlobalComm.get_langdic_val("error_tip", "err_comm_no_device")
+            )
+            self.dialog.show_warning(
                 GlobalComm.get_langdic_val("error_tip", "err_comm_no_device")
             )
             return False
@@ -109,9 +111,11 @@ class TestRun(QWidget):
         self.loading_git.stop_gif()
         self.timer.stop()
 
+    # 测试中是否断连的报错，若报错则弹窗警告，并提示一些信息
     def on_test_err(self, result, err):
         self.loading_git.stop_gif()
         self.timer.stop()
+        self.dialog.show_warning(result + err)
 
     def creat_timer_test(self):
         self.count = 0
@@ -125,11 +129,12 @@ class TestRun(QWidget):
 
     ##################### Function function #######################
     def fixture_test(self):
+        self.reset_model_ui()
+
         if self.update_cfg(True):
-            self.reset_model_ui()
             self.loading_git.init_loading_QFrame()
             self.loading_git.run_git()
-            self.timer.start(1000)
+            self.timer.start()
             self.creat_test_thread(self.fixture_test_result)
 
     def fixture_test_result(self):
@@ -143,7 +148,7 @@ class TestRun(QWidget):
         if self.update_cfg(False):
             self.loading_git.init_loading_QFrame()
             self.loading_git.run_git()
-            self.timer.start(1000)
+            self.timer.start()
             self.creat_test_thread(self.klipper_connect_result)
 
     def klipper_connect_result(self, err=""):
@@ -151,6 +156,7 @@ class TestRun(QWidget):
         state = web_state["state"]
         info_type = GlobalComm.get_langdic_val("view", "test_dev_type")
 
+        # 异常未连接
         if err != "" or state != "ready":
             result = subprocess.run(
                 ["lsusb"], capture_output=True, text=True, check=True

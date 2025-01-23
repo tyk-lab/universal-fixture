@@ -24,4 +24,5 @@ class TestThread(QThread):
             self.action_fun()
             self.test_complete.emit()
         except Exception as e:
-            self.error_occurred.emit("err", str(e))  # Send error signal
+            print("Exception")
+            self.error_occurred.emit("err: ", str(e))  # Send error signal
