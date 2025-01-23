@@ -140,6 +140,7 @@ class DevTest:
 
         if klipper_state:
             try:
+                # todo,像lv这样外接小屏不受管控灯珠，怎么处理
                 if self.dev_dicts[key] != []:
                     # 测试红色
                     # 返回的数据格式 {"rgb1": "0.0, 0.0, 0.1, 0.2"}
