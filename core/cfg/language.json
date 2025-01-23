@@ -6,6 +6,7 @@
             "menu_mode_1": "治具测试",
             "menu_mode_2": "通信测试",
             "menu_mode_3": "单独测试",
+            "menu_mode_4": "功率测试",
             "btn_open": "选择固件",
             "btn_burn": "烧录",
             "btn_test": "测试",
@@ -43,7 +44,7 @@
             "test_dev_type": "通信"
         },
         "error_tip": {
-            "err_cfg_file_not_found": "错误：当前固件缺失配置文件",
+            "err_cfg_file_not_found": "错误：当前固件缺失以test命名的配置文件",
             "err_not_found_firmware": "错误：未选择固件",
             "err_not_in_boot": "错误：找不到设备 或 设备未进入烧录模式",
             "err_not_support_firmware": "错误：不是支持烧录的固件格式",

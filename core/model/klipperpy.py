@@ -21,6 +21,9 @@ class KlipperService:
     def reset_klipper(self):
         self.printer.send_gcode("RESTART")
 
+    def power_run(self):
+        self.printer.send_gcode("TEST_POWER")
+
     def run_test_gcode(self, cmd):
         self.printer.send_gcode(cmd)
 

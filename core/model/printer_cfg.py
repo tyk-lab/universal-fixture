@@ -7,10 +7,10 @@ PRINTER_CFG_DIR = "~/printer_data/config/"
 
 class PrinterConfig:
     def __init__(self):
-        self.is_fixture_test = False
+        self.is_composite_file_test = False
 
-    def set_cfg_mode(self, is_fixtrue):
-        self.is_fixture_test = is_fixtrue
+    def set_cfg_mode(self, is_composite_file_test):
+        self.is_composite_file_test = is_composite_file_test
 
     def get_serial_paths(self, directory="/dev/serial/by-path"):
         # 获取目录下的所有文件路径
@@ -24,7 +24,7 @@ class PrinterConfig:
         # 生成配置文本
         config_lines = ["[include fluidd.cfg]\r\n"]
 
-        if self.is_fixture_test:
+        if self.is_composite_file_test:
             cfg_name = os.path.basename(cfg_path)
             config_lines.append("[include " + cfg_name + "]")
 

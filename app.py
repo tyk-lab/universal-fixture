@@ -88,17 +88,22 @@ class MainWindow(QMainWindow):
         self.action_sigle = QAction(
             GlobalComm.get_langdic_val("view", "menu_mode_3"), self, checkable=True
         )
+        self.action_power = QAction(
+            GlobalComm.get_langdic_val("view", "menu_mode_4"), self, checkable=True
+        )
 
         # 连接信号到槽函数
         self.action_fixture.triggered.connect(self.on_action_toggled)
         self.action_comm.triggered.connect(self.on_action_toggled)
         self.action_sigle.triggered.connect(self.on_action_toggled)
+        self.action_power.triggered.connect(self.on_action_toggled)
 
         mode_list = GlobalComm.setting_json["test_mode"]
         self.action_list = {
             mode_list["fixture"]: self.action_fixture,
             mode_list["comm"]: self.action_comm,
             mode_list["sigle"]: self.action_sigle,
+            mode_list["power"]: self.action_power,
         }
         self.init_test_mode()
 
@@ -106,6 +111,7 @@ class MainWindow(QMainWindow):
         mode_menu.addAction(self.action_fixture)
         mode_menu.addAction(self.action_comm)
         mode_menu.addAction(self.action_sigle)
+        mode_menu.addAction(self.action_power)
 
         # 关于页 #
         about_action = QAction(GlobalComm.get_langdic_val("view", "about"), self)
@@ -194,14 +200,30 @@ class MainWindow(QMainWindow):
         # 查找目录下的cfg文件
         cfg_files = [f for f in os.listdir(directory) if f.endswith(".cfg")]
 
+        # 获取功率测试cfg文件
+        self.power_cfg_path = None
         self.mcu_type = None
+        power_test_file = GlobalComm.setting_json["power_test_file"]
+        print(power_test_file)
 
-        if cfg_files:
-            self.cfg_file_path = os.path.join(directory, cfg_files[0])
+        try:
+            cfg_file = [f for f in cfg_files if "test" in f]
+
+            if cfg_files == [] or cfg_file == []:
+                raise Exception()
+
+            # 获取治具测试文件
+            self.cfg_file_path = os.path.join(directory, cfg_file[0])
+            print(self.cfg_file_path)
             self.message_box.append(
                 GlobalComm.get_langdic_val("view", "select_cfg_file")
                 + f"{self.cfg_file_path}"
             )
+
+            # 获取功率测试文件
+            if power_test_file in cfg_files:
+                self.power_cfg_path = os.path.join(directory, power_test_file)
+            print(self.power_cfg_path)
 
             board, self.mcu_type, file_suffix = parse_cfg_flash_info(self.cfg_file_path)
             self.message_box.append(
@@ -214,7 +236,8 @@ class MainWindow(QMainWindow):
                 print(f"Board: {board}\r")
                 print(f"MCU: {self.mcu_type}\r")
                 print(f"File Suffix: {file_suffix}\r")
-        else:
+
+        except Exception as e:
             self.message_box.append(
                 GlobalComm.get_langdic_val("error_tip", "err_cfg_file_not_found")
             )
@@ -222,13 +245,9 @@ class MainWindow(QMainWindow):
                 GlobalComm.get_langdic_val("error_tip", "err_cfg_file_not_found")
             )
 
-    def open_klipper_webpage(self):
-        url = GlobalComm.setting_json["klipper_web"]
-        webbrowser.open(url, new=2)
-
     def open_new_window(self):
         if self.cfg_file_path != "":
-            self.new_window = TestRun(self.cfg_file_path)
+            self.new_window = TestRun(self.cfg_file_path, self.power_cfg_path)
             self.new_window.show()
             return
 
@@ -265,14 +284,7 @@ class MainWindow(QMainWindow):
 
     # todo
     def on_test(self):
-        cur_mode = GlobalComm.setting_json["cur_test_mode"]
-        mode_list = GlobalComm.setting_json["test_mode"]
-
-        # 按self.action_list的次序去执行函数
-        if cur_mode == mode_list["fixture"] or cur_mode == mode_list["comm"]:
-            self.open_new_window()
-        else:  # 单次测试或其他情况，都打开网页
-            self.open_klipper_webpage()
+        self.open_new_window()
 
     def on_action_toggled(self, checked):
         action = self.sender()

@@ -1,3 +1,4 @@
+import webbrowser
 from PyQt6.QtWidgets import (
     QPushButton,
     QVBoxLayout,
@@ -19,9 +20,13 @@ import subprocess
 
 
 class TestRun(QWidget):
-    def __init__(self, cfg_path):
+    def __init__(self, cfg_path, power_path):
         super().__init__()
+        self.init_data(cfg_path, power_path)
+        self.init_ui()
 
+    def init_data(self, cfg_path, power_path):
+        # 创建测试必须的对象
         self.klipper = KlipperService()
         self.config = PrinterConfig()
         self.dev_test = DevTest(self.klipper)
@@ -30,11 +35,21 @@ class TestRun(QWidget):
         )
         self.creat_timer_test()
 
+        # 初始化一些数据体
         self.dialog = CustomDialog(self)
         self.last_result = ""
         self.cfg_path = cfg_path
+        self.power_path = power_path
         self.loading_git = LoadingPanel(self)
-        self.init_ui()
+
+        # 测试模式映射， 跟setting标识一致
+        mode_list = GlobalComm.setting_json["test_mode"]
+        self.action_list = {
+            mode_list["fixture"]: self.fixture_test,
+            mode_list["comm"]: self.comm_test,
+            mode_list["sigle"]: self.sigle_test,
+            mode_list["power"]: self.power_test,
+        }
 
     def init_ui(self):
         self.setWindowTitle(GlobalComm.get_langdic_val("view", "test_tile"))
@@ -42,7 +57,7 @@ class TestRun(QWidget):
         # 创建垂直布局
         layout = QVBoxLayout()
         button = QPushButton(GlobalComm.get_langdic_val("view", "test_btn"))
-        button.clicked.connect(self.on_init_test_data)
+        button.clicked.connect(self.on_init_test_map)
         layout.addWidget(button)
 
         # 创建数据表格
@@ -69,8 +84,8 @@ class TestRun(QWidget):
         # 应用布局
         self.setLayout(layout)
 
-    def update_cfg(self, is_fixture):
-        self.config.set_cfg_mode(is_fixture)
+    def update_cfg(self, is_composite_type, file_path):
+        self.config.set_cfg_mode(is_composite_type)
 
         # 判断设备是否存在, 不存在弹窗警告
         self.result = self.config.get_serial_paths()
@@ -86,9 +101,9 @@ class TestRun(QWidget):
         # 避免重复写文件
         if self.last_result != self.result:
             print("update cfg file")
-            config_text = self.config.generate_config(self.result, self.cfg_path)
-            if is_fixture:
-                self.config.cp_cfg_printer_dir(self.cfg_path)
+            config_text = self.config.generate_config(self.result, file_path)
+            if is_composite_type:
+                self.config.cp_cfg_printer_dir(file_path)
 
             self.config.write_config_to_file(config_text)
 
@@ -117,11 +132,11 @@ class TestRun(QWidget):
         self.timer.stop()
         self.dialog.show_warning(result + err)
 
-    def creat_timer_test(self):
+    def creat_timer_test(self, timer_fun=None):
         self.count = 0
         self.init_time = 12
         self.timer = QTimer()
-        self.timer.timeout.connect(self.timer_run_task)
+        self.timer.timeout.connect(lambda: self.timer_run_task(timer_fun))
 
     def creat_test_thread(self, fun):
         self.analysis_thread = TestThread(fun)
@@ -131,7 +146,7 @@ class TestRun(QWidget):
     def fixture_test(self):
         self.reset_model_ui()
 
-        if self.update_cfg(True):
+        if self.update_cfg(True, self.cfg_path):
             self.loading_git.init_loading_QFrame()
             self.loading_git.run_git()
             self.timer.start()
@@ -145,11 +160,28 @@ class TestRun(QWidget):
         self.dev_test.test_th()
 
     def comm_test(self):
-        if self.update_cfg(False):
+        if self.update_cfg(False, self.cfg_path):
             self.loading_git.init_loading_QFrame()
             self.loading_git.run_git()
             self.timer.start()
             self.creat_test_thread(self.klipper_connect_result)
+
+    def open_web_control(self):
+        url = GlobalComm.setting_json["klipper_web"]
+        webbrowser.open(url, new=2)
+
+    def sigle_test(self):
+        if self.update_cfg(True, self.cfg_path):
+            self.open_web_control()
+
+    def power_test(self):
+        if self.update_cfg(True, self.power_path):
+            self.creat_timer_test(self.power_test_result)
+            self.timer.start()
+            self.open_web_control()
+
+    def power_test_result(self):
+        self.klipper.power_run()
 
     def klipper_connect_result(self, err=""):
         web_state = self.klipper.get_connect_info()
@@ -219,24 +251,26 @@ class TestRun(QWidget):
             print("行号超出范围")
 
     ##################### event #######################
-    def on_init_test_data(self):
+    def on_init_test_map(self):
         test_mode = GlobalComm.setting_json["cur_test_mode"]
-        mode_list = GlobalComm.setting_json["test_mode"]
 
-        # 跟setting标识一致
-        action_list = {
-            mode_list["fixture"]: self.fixture_test,
-            mode_list["comm"]: self.comm_test,
-        }
+        self.action_list[test_mode]()
 
-        action_list[test_mode]()
+    def show(self):
+        test_mode = GlobalComm.setting_json["cur_test_mode"]
+        if test_mode == "power" or test_mode == "sigle":
+            self.action_list[test_mode]()
+        else:
+            return super().show()
 
-    def timer_run_task(self):
+    def timer_run_task(self, fun):
         self.count += 1
         is_connect = self.klipper.is_connect()
         if not is_connect and self.count <= self.init_time:
             self.timer.start(1000)
             return
-        else:
+        elif fun != None:  # 连接上就执行
+            fun()
+        else:  # 连接上， 放置到线程上执行
             self.analysis_thread.start()
-            self.timer.stop()
+        self.timer.stop()

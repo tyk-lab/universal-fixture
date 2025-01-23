@@ -1,12 +1,14 @@
 {
     "language": "zh",
     "loading_gif": "core/cfg/loading.gif",
-    "cur_test_mode": "comm",
+    "cur_test_mode": "sigle",
     "test_mode": {
         "fixture": "fixture",
         "comm": "comm",
-        "sigle": "sigle"
+        "sigle": "sigle",
+        "power": "power"
     },
+    "power_test_file": "power.cfg",
     "support_firmware": "固件 (*.bin *.uf2)",
     "klipper_web": "http://localhost:81",
     "support_dev": {
