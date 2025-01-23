@@ -134,6 +134,7 @@ class TestRun(QWidget):
 
     def fixture_test_result(self):
         self.dev_test.init_model()
+        self.dev_test.test_rgbw()
         self.dev_test.test_fan()
         self.dev_test.test_btn()
         self.dev_test.test_th()

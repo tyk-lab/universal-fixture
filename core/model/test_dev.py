@@ -13,6 +13,7 @@ class DevTest:
             "temperature_sensor ": [],
             "output_pin ": [],
             "manual_stepper ": [],
+            "neopixel ": [],
         }
 
         self.klipper = klipper
@@ -124,6 +125,47 @@ class DevTest:
                     set_val = "0"
                     self.dev.run_fan(set_val)
                     self.dev.check_fan_state(set_val, fixture_dict)
+
+                    self.show_result(key)
+                    return
+            except Exception as e:
+                self._test_exception(e, key)
+        else:
+            # todo,更新治具状态
+            self._raise_connect_exception(klipper_state, False)
+
+    def test_rgbw(self):
+        klipper_state = self.klipper.is_connect(False)
+        key = "neopixel "
+
+        if klipper_state:
+            try:
+                if self.dev_dicts[key] != []:
+                    # 测试红色
+                    # 返回的数据格式 {"rgb1": "0.0, 0.0, 0.1, 0.2"}
+                    set_val = "red"
+                    fixture_dict = {
+                        #         r    g    b    w
+                        "my_neopixel": "0.9, 0.0, 0.1, 0.2",
+                        "fysetc_mini12864": "0.9, 0.0, 0.1, 0.2",
+                    }
+                    color_dict = self.dev.run_rgbw(set_val)
+                    self.dev.check_rgbw_state(color_dict, fixture_dict)
+
+                    # 测试蓝色
+                    set_val = "blue"
+                    color_dict = self.dev.run_rgbw(set_val)
+                    self.dev.check_rgbw_state(color_dict, fixture_dict)
+
+                    # 测试绿色
+                    set_val = "green"
+                    color_dict = self.dev.run_rgbw(set_val)
+                    self.dev.check_rgbw_state(color_dict, fixture_dict)
+
+                    # 测试白色
+                    set_val = "white"
+                    color_dict = self.dev.run_rgbw(set_val)
+                    self.dev.check_rgbw_state(color_dict, fixture_dict)
 
                     self.show_result(key)
                     return

@@ -83,7 +83,6 @@ class DevInfo:
         self.klipper.run_test_gcode("TEST_FANS FAN_SPEED=" + value)
 
     def check_fan_state(self, set_val, fixture_dict):
-
         # todo, 需要校正
         expected_rpm = {
             "0": 0,
@@ -117,3 +116,65 @@ class DevInfo:
 
     def run_heat(self, value):
         self.klipper.run_test_gcode("TEST_HEATS VAL=" + value)
+
+    def run_rgbw(self, key):
+        color_dict = {
+            "red": "0.0",
+            "blue": "0.0",
+            "green": "0.0",
+            "white": "0.0",
+        }
+        if key in color_dict:
+            color_dict[key] = "1.0"
+
+        self.klipper.run_test_gcode(
+            f"TEST_RGBWS RED={color_dict['red']} GREEN={color_dict['green']} BLUE={color_dict['blue']} WHITE={color_dict['white']}"
+        )
+
+        return color_dict
+
+    def get_rgbw_state(self):
+        key = "neopixel "
+        result_dict = {}
+        if self.dev_dicts[key] != []:
+            sensor_dict = self.klipper.get_info(key)
+            for key, value in sensor_dict.items():
+                result_dict[key] = value
+        return result_dict
+
+    def check_rgbw_state(self, set_color_dict, fixture_dict):
+        result_dict = self.get_rgbw_state()
+        log_dict = {}
+        tolerance = 0.2
+
+        # print("check_rgbw_state")
+
+        has_exception = False
+
+        # 定义检测的颜色顺序
+        color_order = ["red", "green", "blue", "white"]
+
+        # 判定结果
+        for key in result_dict.keys():
+            rgb_values = fixture_dict[key].split(", ")
+            # 组合对应治具数据为元组，方便颜色匹对
+            fixture_key_zip = zip(color_order, rgb_values)
+            log_dict[key] = (
+                "fixture color: "
+                + str(fixture_dict[key])
+                + "  cur "
+                + str(set_color_dict)
+            )
+
+            result_dict[key] = True
+            for color, fixture_val in fixture_key_zip:
+                # print(key, "  ", color)
+                if not float(fixture_val) >= float(set_color_dict[color]) - tolerance:
+                    result_dict[key] = False
+                    has_exception = True
+                    break
+
+            # print("\r\n")
+
+        if has_exception:
+            raise Exception(result_dict, log_dict)
