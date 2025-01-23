@@ -15,8 +15,6 @@ class DevTest:
             "manual_stepper ": [],
         }
 
-        # 存储对应类型的设备所在的行号
-        self.tabal_index = {}
         self.klipper = klipper
         self.dev = DevInfo(klipper, self.dev_dicts)
 
@@ -27,25 +25,7 @@ class DevTest:
     def init_model(self):
         self.dev_dicts = self.dev.get_dev_names()
 
-        # print(self.dev_dicts)
-        i = 0
-        for key, value in self.dev_dicts.items():
-            index_list = []
-            for name in value:
-                raw_data = [
-                    "",  # result
-                    key,  # type
-                    name,  # name
-                    "",  # log
-                ]
-                index_list.append(i)
-                i += 1
-                self.add_row_callback(raw_data, QColor("white"), False)
-            self.tabal_index[key] = index_list
-
     def show_result(self, key, log_dict=None, result_dict=None):
-        match_index_list = self.tabal_index[key]
-
         i = 0
         # 遍历对应的设备，更新结果
         result = True
@@ -64,7 +44,7 @@ class DevTest:
                 item,  # name
                 log,  # log
             ]
-            self.modify_row_callback(match_index_list[i], raw_data, color)
+            self.add_row_callback(raw_data, color)
             i += 1
 
     def _raise_connect_exception(self, klipper_state, fixture_state):
@@ -85,19 +65,21 @@ class DevTest:
     def test_btn(self):
         # todo,命令开始前，判断下两边的状态
         klipper_state = self.klipper.is_connect(False)
+        key = "gcode_button "
 
         if klipper_state:
             try:
-                # todo，控制万能板输出(每个指令必须有回复)
-                self.dev.check_btn_state(True)
+                if self.dev_dicts[key] != []:
+                    # todo，控制万能板输出(每个指令必须有回复)
+                    self.dev.check_btn_state(True)
 
-                # todo，控制万能板关闭(每个指令必须有回复)
-                self.dev.check_btn_state(False)
+                    # todo，控制万能板关闭(每个指令必须有回复)
+                    self.dev.check_btn_state(False)
 
-                self.show_result("gcode_button ")
-                return
+                    self.show_result(key)
+                    return
             except Exception as e:
-                self._test_exception(e, "gcode_button ")
+                self._test_exception(e, key)
         else:
             # todo,更新治具状态
             self._raise_connect_exception(klipper_state, False)
@@ -105,45 +87,48 @@ class DevTest:
     def test_th(self):
         # todo,命令开始前，判断下两边的状态
         klipper_state = self.klipper.is_connect(False)
+        key = "temperature_sensor "
 
         if klipper_state:
             try:
-                # todo，获取万能板温感值
-                fixture_th = 23
-                self.dev.check_th_state(fixture_th)
-                self.show_result("temperature_sensor ")
-                return
+                if self.dev_dicts[key] != []:
+                    # todo，获取万能板温感值
+                    fixture_th = 23
+                    self.dev.check_th_state(fixture_th)
+                    self.show_result(key)
+                    return
             except Exception as e:
-                self._test_exception(e, "temperature_sensor ")
+                self._test_exception(e, key)
         else:
             # todo,更新治具状态
             self._raise_connect_exception(klipper_state, False)
 
     def test_fan(self):
-
         klipper_state = self.klipper.is_connect(False)
+        key = "fan_generic "
         if klipper_state:
             try:
-                # 让所有风扇旋转
-                # set_val = "0.8"
-                # self.dev.run_fan(set_val)
-                # # todo, 获取万能板中非三线的风速
-                # # 设返回的数据格式：{'fan2': 0.0, 'fan3': 0.0}
-                fixture_dict = {"fan0": 0.0, "fan1": 0.0}
-                # self.dev.check_fan_state(set_val, fixture_dict)
+                if self.dev_dicts[key] != []:
+                    # 让所有风扇旋转
+                    set_val = "0.8"
+                    self.dev.run_fan(set_val)
+                    # # todo, 获取万能板中非三线的风速
+                    # # 设返回的数据格式：{'fan2': 0.0, 'fan3': 0.0}
+                    fixture_dict = {"fan0": 0.0, "fan1": 0.0}
+                    self.dev.check_fan_state(set_val, fixture_dict)
 
-                # set_val = "0.2"
-                # self.dev.run_fan(set_val)
-                # self.dev.check_fan_state(set_val, fixture_dict)
+                    set_val = "0.2"
+                    self.dev.run_fan(set_val)
+                    self.dev.check_fan_state(set_val, fixture_dict)
 
-                set_val = "0"
-                self.dev.run_fan(set_val)
-                self.dev.check_fan_state(set_val, fixture_dict)
+                    set_val = "0"
+                    self.dev.run_fan(set_val)
+                    self.dev.check_fan_state(set_val, fixture_dict)
 
-                self.show_result("fan_generic ")
-                return
+                    self.show_result(key)
+                    return
             except Exception as e:
-                self._test_exception(e, "fan_generic ")
+                self._test_exception(e, key)
         else:
             # todo,更新治具状态
             self._raise_connect_exception(klipper_state, False)

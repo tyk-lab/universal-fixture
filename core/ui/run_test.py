@@ -9,6 +9,8 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QStandardItemModel, QStandardItem, QColor
 from PyQt6.QtCore import Qt
 
+from core.utils.Test_thread import TestThread
+from core.ui.loading import LoadingPanel
 from core.model.test_dev import DevTest
 from core.ui.table import CustomTableView
 from core.model.klipperpy import KlipperService
@@ -32,6 +34,7 @@ class TestRun(QWidget):
 
         self.last_result = ""
         self.cfg_path = cfg_path
+        self.loading_git = LoadingPanel(self)
         self.init_ui()
 
     def init_ui(self):
@@ -101,13 +104,19 @@ class TestRun(QWidget):
             ]
         )
 
+    def on_test_complete(self, result):
+        self.loading_git.stop_gif()
+
+    def on_test_err(self, result, err):
+        self.loading_git.stop_gif()
+
     ##################### Function function #######################
     def fixture_test(self):
         if self.update_cfg(True):
+            self.reset_model_ui()
             self.comm_start_timer(12, self.fixture_test_result)
 
     def fixture_test_result(self):
-        self.reset_model_ui()
         self.dev_test.init_model()
         self.dev_test.test_fan()
         self.dev_test.test_btn()
@@ -210,3 +219,10 @@ class TestRun(QWidget):
             mode_list["comm"]: self.comm_test,
         }
         action_list[test_mode]()
+
+        self.loading_git.init_loading_QFrame()
+        self.loading_git.run_git()
+
+        self.analysis_thread = TestThread(action_list, test_mode)
+        self.analysis_thread.bind_event(self.on_test_complete, self.on_test_err)
+        self.analysis_thread.start()
