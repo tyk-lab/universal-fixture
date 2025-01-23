@@ -6,8 +6,8 @@ from PyQt6.QtWidgets import (
     QWidget,
     QTableView,
 )
-from PyQt6.QtGui import QStandardItemModel, QStandardItem, QColor
-from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QStandardItemModel, QStandardItem
+from PyQt6.QtCore import Qt, QTimer
 
 from core.utils.Test_thread import TestThread
 from core.ui.loading import LoadingPanel
@@ -31,6 +31,7 @@ class TestRun(QWidget):
         self.dev_test.set_update_callback(
             self.make_line_data, self.delete_and_insert_line
         )
+        self.creat_timer_test()
 
         self.last_result = ""
         self.cfg_path = cfg_path
@@ -89,7 +90,7 @@ class TestRun(QWidget):
 
             self.config.write_config_to_file(config_text)
 
-        # self.klipper.reset_printer()
+        self.klipper.reset_printer()
         self.last_result = self.result
         return True
 
@@ -104,17 +105,32 @@ class TestRun(QWidget):
             ]
         )
 
-    def on_test_complete(self, result):
+    def on_test_complete(self):
         self.loading_git.stop_gif()
+        self.timer.stop()
 
     def on_test_err(self, result, err):
         self.loading_git.stop_gif()
+        self.timer.stop()
+
+    def creat_timer_test(self):
+        self.count = 0
+        self.init_time = 12
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.timer_run_task)
+
+    def creat_test_thread(self, fun):
+        self.analysis_thread = TestThread(fun)
+        self.analysis_thread.bind_event(self.on_test_complete, self.on_test_err)
 
     ##################### Function function #######################
     def fixture_test(self):
         if self.update_cfg(True):
             self.reset_model_ui()
-            self.comm_start_timer(12, self.fixture_test_result)
+            self.loading_git.init_loading_QFrame()
+            self.loading_git.run_git()
+            self.timer.start(1000)
+            self.creat_test_thread(self.fixture_test_result)
 
     def fixture_test_result(self):
         self.dev_test.init_model()
@@ -124,7 +140,10 @@ class TestRun(QWidget):
 
     def comm_test(self):
         if self.update_cfg(False):
-            self.comm_start_timer(12, self.klipper_connect_result)
+            self.loading_git.init_loading_QFrame()
+            self.loading_git.run_git()
+            self.timer.start(1000)
+            self.creat_test_thread(self.klipper_connect_result)
 
     def klipper_connect_result(self, err=""):
         web_state = self.klipper.get_connect_info()
@@ -192,22 +211,6 @@ class TestRun(QWidget):
         else:
             print("行号超出范围")
 
-    def comm_start_timer(self, init_time, fun):
-        count = 0
-
-        def run_task():
-            nonlocal count
-            count += 1
-            is_connect = self.klipper.is_connect()
-            if not is_connect and count <= init_time:
-                threading.Timer(1, run_task).start()
-                return
-            else:
-                fun()
-
-        # first run
-        run_task()
-
     ##################### event #######################
     def on_init_test_data(self):
         test_mode = GlobalComm.setting_json["cur_test_mode"]
@@ -218,11 +221,15 @@ class TestRun(QWidget):
             mode_list["fixture"]: self.fixture_test,
             mode_list["comm"]: self.comm_test,
         }
+
         action_list[test_mode]()
 
-        self.loading_git.init_loading_QFrame()
-        self.loading_git.run_git()
-
-        self.analysis_thread = TestThread(action_list, test_mode)
-        self.analysis_thread.bind_event(self.on_test_complete, self.on_test_err)
-        self.analysis_thread.start()
+    def timer_run_task(self):
+        self.count += 1
+        is_connect = self.klipper.is_connect()
+        if not is_connect and self.count <= self.init_time:
+            self.timer.start(1000)
+            return
+        else:
+            self.analysis_thread.start()
+            self.timer.stop()

@@ -1,14 +1,15 @@
-from PyQt6.QtCore import QThread, pyqtSignal, Qt
+import threading
+from PyQt6.QtCore import QThread, pyqtSignal, QTimer
 
 
 class TestThread(QThread):
-    test_complete = pyqtSignal(str)
     error_occurred = pyqtSignal(str, str)
+    test_complete = pyqtSignal()
 
-    def __init__(self, action_list, test_mode, *args, **kwargs):
+    def __init__(self, action_fun, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.action_list = action_list
-        self.test_mode = test_mode
+        self.action_fun = action_fun
+        self.count = 0
 
     def bind_event(self, complete_event, error_event):
         self.test_complete.connect(complete_event)
@@ -20,7 +21,7 @@ class TestThread(QThread):
     # flash device thread
     def run(self):
         try:
-            self.action_list[self.test_mode]()
-            self.test_complete.emit("end")  # Transmit completion signal
+            self.action_fun()
+            self.test_complete.emit()
         except Exception as e:
             self.error_occurred.emit("err", str(e))  # Send error signal

@@ -44,6 +44,7 @@ class DevTest:
                 item,  # name
                 log,  # log
             ]
+            # print(raw_data)
             self.add_row_callback(raw_data, color)
             i += 1
 
@@ -53,8 +54,7 @@ class DevTest:
             + ": klipper state "
             + str(klipper_state)
             + "\r\n",
-            "fixture state ",
-            +str(fixture_state),
+            "fixture state " + str(fixture_state),
         )
 
     def _test_exception(self, e, key):
