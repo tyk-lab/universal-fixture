@@ -80,7 +80,7 @@ class DevInfo:
         return result_dict
 
     def run_fan(self, value):
-        self.klipper.run_test_gcode("TEST_FANS FAN_SPEED=" + value)
+        self.klipper.run_test_gcode("_TEST_FANS FAN_SPEED=" + value)
 
     def check_fan_state(self, set_val, fixture_dict):
         # todo, 需要校正
@@ -115,7 +115,7 @@ class DevInfo:
             raise Exception(result_dict, log_dict)
 
     def run_heat(self, value):
-        self.klipper.run_test_gcode("TEST_HEATS VAL=" + value)
+        self.klipper.run_test_gcode("_TEST_HEATS VAL=" + value)
 
     def run_rgbw(self, key):
         color_dict = {
