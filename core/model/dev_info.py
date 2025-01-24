@@ -188,6 +188,7 @@ class DevInfo:
     #     test_result = all(diff > inaccuracies for diff in differences)
     #     return (test_result, cur)
 
+    # todo, 测试使用
     def check_adxl345_state(self, inaccuracies=30):
         print("check_adxl345_state")
         import random
