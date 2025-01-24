@@ -14,6 +14,7 @@ class DevTest:
             "output_pin ": [],
             "manual_stepper ": [],
             "neopixel ": [],
+            "adxl345": [],  # 这个直接读读不出数据
         }
 
         self.klipper = klipper
@@ -24,7 +25,7 @@ class DevTest:
         self.modify_row_callback = modify_row_callback
 
     def init_model(self):
-        self.dev_dicts = self.dev.get_dev_names()
+        self.dev_dicts = self.dev.get_dev_info()
 
     def show_result(self, key, log_dict=None, result_dict=None):
         i = 0
@@ -48,6 +49,20 @@ class DevTest:
             # print(raw_data)
             self.add_row_callback(raw_data, color)
             i += 1
+
+    def show_sigle_result(self, key, result, log):
+        color = GlobalComm.err_color
+        if result:
+            color = GlobalComm.ok_color
+
+        raw_data = [
+            result,
+            key,  # type
+            key,  # name
+            log,  # log
+        ]
+        # print(raw_data)
+        self.add_row_callback(raw_data, color)
 
     def _raise_connect_exception(self, klipper_state, fixture_state):
         raise Exception(
@@ -175,3 +190,14 @@ class DevTest:
         else:
             # todo,更新治具状态
             self._raise_connect_exception(klipper_state, False)
+
+    def test_adxl345(self, dialog):
+        klipper_state = self.klipper.is_connect(False)
+        key = "adxl345"
+
+        if klipper_state:
+            # if self.klipper.get_info(key) != {}:
+            dialog.set_title_name(key)
+            dialog.set_check_fun(self.dev.check_adxl345_state, self.show_sigle_result)
+            dialog.setModal(True)
+            dialog.show()

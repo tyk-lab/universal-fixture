@@ -24,6 +24,12 @@ class KlipperService:
     def power_run(self):
         self.printer.send_gcode("TEST_POWER")
 
+    def accelerometer_run(self):
+        self.printer.send_gcode("ACCELEROMETER_QUERY")
+        result_list = self.printer.get_gcode(1)
+        result = "".join(result_list).split(": ")[1]
+        return result
+
     def run_test_gcode(self, cmd):
         self.printer.send_gcode(cmd)
 

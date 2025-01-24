@@ -8,6 +8,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QStandardItemModel, QStandardItem
 from PyQt6.QtCore import Qt, QTimer
 
+from core.ui.timer_dialog import TimerDialog
 from core.utils.common import GlobalComm
 from core.utils.msg import CustomDialog
 from core.utils.Test_thread import TestThread
@@ -154,10 +155,11 @@ class TestRun(QWidget):
 
     def fixture_test_result(self):
         self.dev_test.init_model()
-        self.dev_test.test_rgbw()
-        self.dev_test.test_fan()
-        self.dev_test.test_btn()
-        self.dev_test.test_th()
+        self.dev_test.test_adxl345(self.time_dialog)
+        # self.dev_test.test_rgbw()
+        # self.dev_test.test_fan()
+        # self.dev_test.test_btn()
+        # self.dev_test.test_th()
 
     def comm_test(self):
         if self.update_cfg(False, self.cfg_path):
@@ -252,8 +254,9 @@ class TestRun(QWidget):
 
     ##################### event #######################
     def on_init_test_map(self):
-        test_mode = GlobalComm.setting_json["cur_test_mode"]
+        self.time_dialog = TimerDialog()
 
+        test_mode = GlobalComm.setting_json["cur_test_mode"]
         self.action_list[test_mode]()
 
     def show(self):

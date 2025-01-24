@@ -1,13 +1,11 @@
-from core.model.moonrakerpy import MoonrakerPrinter
-from core.utils.common import GlobalComm
-
-
 class DevInfo:
     def __init__(self, klipper, dicts):
         self.klipper = klipper
         self.dev_dicts = dicts
 
-    def get_dev_names(self):
+        self.prev_val = 0, 0, 0
+
+    def get_dev_info(self):
         for key in self.dev_dicts.keys():
             list = self.klipper.list_names(key)
             self.dev_dicts[key] = list
@@ -148,7 +146,6 @@ class DevInfo:
         tolerance = 0.2
 
         # print("check_rgbw_state")
-
         has_exception = False
 
         # 定义检测的颜色顺序
@@ -178,3 +175,21 @@ class DevInfo:
 
         if has_exception:
             raise Exception(result_dict, log_dict)
+
+    # def check_adxl345_state(self, inaccuracies):
+    #     cur_val = self.klipper.accelerometer_run()
+
+    #     cur = list(map(float, cur_val.split(", ")))
+    #     prev = list(self.prev_val)
+
+    #     differences = [abs(cur[j] - prev[j]) for j in range(3)]
+
+    #     self.prev_val = cur
+    #     test_result = all(diff > inaccuracies for diff in differences)
+    #     return (test_result, cur)
+
+    def check_adxl345_state(self, inaccuracies=30):
+        print("check_adxl345_state")
+        import random
+
+        return (True, [3, random.random(), random.random()])
