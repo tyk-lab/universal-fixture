@@ -6,7 +6,7 @@ from PyQt6.QtWidgets import (
     QTableView,
 )
 from PyQt6.QtGui import QStandardItemModel, QStandardItem
-from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 
 from core.ui.timer_dialog import TimerDialog
 from core.utils.common import GlobalComm
@@ -21,10 +21,14 @@ import subprocess
 
 
 class TestRun(QWidget):
+    start_timer_dialog_signal = pyqtSignal()
+
     def __init__(self, cfg_path, power_path):
         super().__init__()
         self.init_data(cfg_path, power_path)
         self.init_ui()
+
+        self.start_timer_dialog_signal.connect(self.show_timer_dialog_test)
 
     def init_data(self, cfg_path, power_path):
         # 创建测试必须的对象
@@ -155,11 +159,16 @@ class TestRun(QWidget):
 
     def fixture_test_result(self):
         self.dev_test.init_model()
-        self.dev_test.test_adxl345(self.time_dialog)
+        self.dev_test.test_adxl345(self.time_dialog, self.start_timer_dialog_signal)
         # self.dev_test.test_rgbw()
         # self.dev_test.test_fan()
         # self.dev_test.test_btn()
         # self.dev_test.test_th()
+
+    # 跟使用到timerDialog的类关联
+    def show_timer_dialog_test(self):
+        self.time_dialog.setModal(True)
+        self.time_dialog.show()
 
     def comm_test(self):
         if self.update_cfg(False, self.cfg_path):

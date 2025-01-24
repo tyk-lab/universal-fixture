@@ -192,4 +192,5 @@ class DevInfo:
         print("check_adxl345_state")
         import random
 
-        return (True, [3, random.random(), random.random()])
+        # 结果，差异值, 当前的标准值,
+        return (True, 200, [3, 3, 3], [3, random.random(), random.random()])

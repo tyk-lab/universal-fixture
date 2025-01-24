@@ -191,7 +191,7 @@ class DevTest:
             # todo,更新治具状态
             self._raise_connect_exception(klipper_state, False)
 
-    def test_adxl345(self, dialog):
+    def test_adxl345(self, dialog, signal):
         klipper_state = self.klipper.is_connect(False)
         key = "adxl345"
 
@@ -199,5 +199,4 @@ class DevTest:
             # if self.klipper.get_info(key) != {}:
             dialog.set_title_name(key)
             dialog.set_check_fun(self.dev.check_adxl345_state, self.show_sigle_result)
-            dialog.setModal(True)
-            dialog.show()
+            signal.emit()
