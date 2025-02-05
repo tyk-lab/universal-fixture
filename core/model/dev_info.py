@@ -39,8 +39,7 @@ class DevInfo:
                     result_dict[key] = True
             raise Exception(result_dict, log_dict)
 
-    def get_th_state(self):
-        key = "temperature_sensor "
+    def get_th_state(self, key):
         result_dict = {}
         if self.dev_dicts[key] != []:
             sensor_dict = self.klipper.get_info(key)
@@ -48,8 +47,8 @@ class DevInfo:
                 result_dict[key] = value["temperature"]
         return result_dict
 
-    def check_th_state(self, th_val):
-        result_dict = self.get_th_state()
+    def check_th_state(self, th_val, key):
+        result_dict = self.get_th_state(key)
         tolerance = 1  # todo，修改容差
         # print(result_dict)
         log_dict = {}
@@ -195,3 +194,50 @@ class DevInfo:
 
         # 结果，差异值, 当前的标准值,
         return (True, 200, [3, 3, 3], [3, random.random(), random.random()])
+
+    def run_motor(self, dir):
+        self.klipper.run_test_gcode("_TEST_MOTOR_A_LOOP DIR=" + dir)
+
+    # 脉冲值格式 {"a": 3000, "b": 3000, ...}
+    def check_motor_distance(self, fixture_dict):
+        # todo, 设一圈的脉冲数为 200*16*40=128000
+        tolerance = 300
+        stander_pulses = 128000
+        log_dict = {}
+        result_dict = {}
+        a_loop_pulses_up = stander_pulses + tolerance
+        a_loop_pulses_down = stander_pulses + tolerance
+
+        tip = "stander: " + str(stander_pulses) + " tolerance: " + str(tolerance)
+        # 判定结果
+        for key, pulses in fixture_dict.items():
+            log_dict[key] = "  cur pulses:  " + str(pulses) + tip
+            if pulses <= a_loop_pulses_up and pulses >= a_loop_pulses_down:
+                result_dict[key] = True
+            else:
+                result_dict[key] = False
+                has_exception = True
+
+        if has_exception:
+            raise Exception(result_dict, log_dict)
+
+    def run_heats(self, enalbe):
+        self.klipper.run_test_gcode("_TEST_HEATS RUN=" + enalbe)
+
+    def check_heats_state(self, init_temp_dict, next_temp_dict):
+        log_dict = {}
+        result_dict = {}
+
+        # 判定结果
+        for key, value in init_temp_dict.items():
+            log_dict[key] = (
+                "  init temp:  " + str(value) + "next temp: " + str(next_temp_dict[key])
+            )
+            if value > next_temp_dict[key]:
+                result_dict[key] = True
+            else:
+                result_dict[key] = False
+                has_exception = True
+
+        if has_exception:
+            raise Exception(result_dict, log_dict)

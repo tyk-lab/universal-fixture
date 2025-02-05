@@ -12,7 +12,8 @@ class DevTest:
             "fan_generic ": [],
             "temperature_sensor ": [],
             "output_pin ": [],
-            "manual_stepper ": [],
+            "heater_bed": [],
+            "extruder": [],
             "neopixel ": [],
             "adxl345": [],  # 这个直接读读不出数据
         }
@@ -100,7 +101,7 @@ class DevTest:
             # todo,更新治具状态
             self._raise_connect_exception(klipper_state, False)
 
-    def test_th(self):
+    def test_comm_th(self):
         # todo,命令开始前，判断下两边的状态
         klipper_state = self.klipper.is_connect(False)
         key = "temperature_sensor "
@@ -110,9 +111,32 @@ class DevTest:
                 if self.dev_dicts[key] != []:
                     # todo，获取万能板温感值
                     fixture_th = 23
-                    self.dev.check_th_state(fixture_th)
+                    self.dev.check_th_state(fixture_th, key)
                     self.show_result(key)
                     return
+            except Exception as e:
+                self._test_exception(e, key)
+        else:
+            # todo,更新治具状态
+            self._raise_connect_exception(klipper_state, False)
+
+    def test_extruder_th(self):
+        klipper_state = self.klipper.is_connect(False)
+        key = "extruder"
+        other_key = "heater_bed"
+
+        if klipper_state:
+            try:
+                if self.dev_dicts[key] != []:
+                    # todo，获取万能板温感值
+                    fixture_th = 23
+                    self.dev.check_th_state(fixture_th, key)
+                    self.show_result(key)
+
+                if self.dev_dicts[other_key] != []:
+                    self.dev.check_th_state(fixture_th, other_key)
+                    self.show_result(other_key)
+                return
             except Exception as e:
                 self._test_exception(e, key)
         else:
@@ -200,3 +224,60 @@ class DevTest:
             dialog.set_title_name(key)
             dialog.set_check_fun(self.dev.check_adxl345_state, self.show_sigle_result)
             signal.emit()
+
+    def test_motor(self):
+        klipper_state = self.klipper.is_connect(False)
+        key = "extruder"
+
+        if klipper_state:
+            try:
+                if self.dev_dicts[key] != []:
+                    # todo, 通知万能板采集脉冲
+                    self.dev.run_motor(True)
+                    # todo, 获取万能板采集的脉冲
+                    fixture_dict = {"a": 3000, "b": 3000}
+                    self.dev.check_motor_distance(fixture_dict)
+
+                    # todo, 通知万能板采集脉冲
+                    self.dev.run_motor(False)
+                    # todo, 获取万能板采集的脉冲
+                    self.dev.check_motor_distance(fixture_dict)
+
+                    self.show_result(key)
+                    return
+            except Exception as e:
+                self._test_exception(e, key)
+        else:
+            # todo,更新治具状态
+            self._raise_connect_exception(klipper_state, False)
+
+    def test_heats(self):
+        klipper_state = self.klipper.is_connect(False)
+        key = "extruder"
+        other_key = "heater_bed"
+
+        if klipper_state:
+            try:
+                # todo
+                if self.dev_dicts[key] != []:
+                    # todo, 获取万能板的初始温度值
+                    self.dev.run_heats(True)
+                    fixture_dict = {
+                        "a": 3000,
+                        "b": 3000,
+                    }  # todo, 区分同事有无两个key，看反馈
+                    # todo，获取万能板当前温度值
+                    self.dev.check_heats_state(fixture_dict)
+                    self.show_result(key)
+
+                if self.dev_dicts[other_key] != []:
+                    self.dev.run_heats(False)
+                    self.dev.check_heats_state(fixture_dict)
+                    self.show_result(other_key)
+
+                return
+            except Exception as e:
+                self._test_exception(e, key)
+        else:
+            # todo,更新治具状态
+            self._raise_connect_exception(klipper_state, False)

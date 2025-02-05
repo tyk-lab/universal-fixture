@@ -164,6 +164,9 @@ class TestRun(QWidget):
         # self.dev_test.test_fan()
         # self.dev_test.test_btn()
         # self.dev_test.test_th()
+        #  self.dev_test.test_extruder_th()
+        # self.dev_test.test_motor()
+        # self.dev_test.test_heats()
 
     # 跟使用到timerDialog的类关联
     def show_timer_dialog_test(self):
