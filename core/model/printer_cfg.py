@@ -12,7 +12,7 @@ class PrinterConfig:
     def set_cfg_mode(self, is_composite_file_test):
         self.is_composite_file_test = is_composite_file_test
 
-    def get_serial_paths(self, directory="/dev/serial/by-path"):
+    def get_serial_paths(self, directory="/dev/serial/by-id"):
         # 获取目录下的所有文件路径
         try:
             serial_paths = [os.path.join(directory, f) for f in os.listdir(directory)]

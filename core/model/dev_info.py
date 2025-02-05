@@ -175,25 +175,32 @@ class DevInfo:
         if has_exception:
             raise Exception(result_dict, log_dict)
 
-    # def check_adxl345_state(self, inaccuracies):
-    #     cur_val = self.klipper.accelerometer_run()
+    def check_adxl345_state(self, inaccuracies=1000):
+        if self.klipper.is_connect(False):
+            cur_val = self.klipper.accelerometer_run()
 
-    #     cur = list(map(float, cur_val.split(", ")))
-    #     prev = list(self.prev_val)
+            cur = list(map(float, cur_val.split(", ")))
+            cur = [round(num, 3) for num in cur]
 
-    #     differences = [abs(cur[j] - prev[j]) for j in range(3)]
+            prev = list(self.prev_val)
 
-    #     self.prev_val = cur
-    #     test_result = all(diff > inaccuracies for diff in differences)
-    #     return (test_result, cur)
+            differences = [abs(cur[j] - prev[j]) for j in range(3)]
+            differences = [round(num, 3) for num in differences]
 
-    # todo, 测试使用
-    def check_adxl345_state(self, inaccuracies=30):
-        print("check_adxl345_state")
-        import random
+            self.prev_val = cur
+            test_result = all(diff > inaccuracies for diff in differences)
+            # 结果，标准偏差， 差异值, 当前的标准值
+            return (test_result, inaccuracies, differences, cur)
 
-        # 结果，差异值, 当前的标准值,
-        return (True, 200, [3, 3, 3], [3, random.random(), random.random()])
+        raise Exception()
+
+    # todo, 测试adxl345使用
+    # def check_adxl345_state(self, inaccuracies=30):
+    #     print("check_adxl345_state")
+    #     import random
+
+    #     # 结果，差异值, 当前的标准值,
+    #     return (True, 200, [3, 3, 3], [3, random.random(), random.random()])
 
     def run_motor(self, dir):
         self.klipper.run_test_gcode("_TEST_MOTOR_A_LOOP DIR=" + dir)

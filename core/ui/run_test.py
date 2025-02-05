@@ -4,6 +4,9 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
     QTableView,
+    QLineEdit,
+    QLabel,
+    QHBoxLayout,
 )
 from PyQt6.QtGui import QStandardItemModel, QStandardItem
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal
@@ -65,6 +68,17 @@ class TestRun(QWidget):
         button.clicked.connect(self.on_init_test_map)
         layout.addWidget(button)
 
+        # 创建并添加标签
+        h_layout = QHBoxLayout()
+        label = QLabel("serial id: ")
+        h_layout.addWidget(label)
+
+        # 创建并添加文本编辑框
+        self.line_edit = QLineEdit()
+        h_layout.addWidget(self.line_edit)
+
+        layout.addLayout(h_layout)
+
         # 创建数据表格
         table_view = CustomTableView()
         layout.addWidget(table_view)
@@ -106,6 +120,7 @@ class TestRun(QWidget):
         # 避免重复写文件
         if self.last_result != self.result:
             print("update cfg file")
+            self.line_edit.setText(", ".join(self.result))
             config_text = self.config.generate_config(self.result, file_path)
             if is_composite_type:
                 self.config.cp_cfg_printer_dir(file_path)

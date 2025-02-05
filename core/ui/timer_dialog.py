@@ -7,7 +7,7 @@ class TimerDialog(QDialog):
         super().__init__()
 
         self.cur_time = 0
-        self.timeout_duration = 30
+        self.timeout_duration = 15
         self.pass_cnt = 0
         self.test_key_name = ""
 
@@ -39,24 +39,27 @@ class TimerDialog(QDialog):
         self.timer.timeout.connect(self.loop_check)
 
     def loop_check(self):
-        result, stan_diff, cur_diff, cur_val = self.check_fun()
-        test_result = f"标准误差值: {stan_diff} \r\n偏差值 {cur_diff} \r\n当前值(晃动后的值): {cur_val}"
+        try:
+            result, stan_diff, cur_diff, cur_val = self.check_fun()
+            test_result = f"标准误差值: {stan_diff} \r\n偏差值 {cur_diff} \r\n当前值(晃动后的值): {cur_val}"
 
-        print("running ", self.cur_time)
-        print("cur:", cur_val)
+            # print("running ", self.cur_time)
+            # print("cur:", cur_val)
 
-        self.label.setStyleSheet("color: green;" if result else "color: red;")
-        self.label.setText(test_result)
-        self.cur_time += 1
+            self.label.setStyleSheet("color: green;" if result else "color: red;")
+            self.label.setText(test_result)
+            self.cur_time += 1
 
-        if result:
-            self.pass_cnt += 1
-            if self.pass_cnt >= 5:
-                print("")
-                self.close_dialog(True, test_result)
-        elif self.cur_time >= self.timeout_duration:
-            print("over timer")
-            self.close_dialog(False, test_result)
+            if result:
+                self.pass_cnt += 1
+                if self.pass_cnt >= 4:
+                    print("pass")
+                    self.close_dialog(True, test_result)
+            elif self.cur_time >= self.timeout_duration:
+                print("over timer")
+                self.close_dialog(False, test_result)
+        except Exception as e:
+            self.close_dialog(False, "mcu disconnect")
 
     def close_dialog(self, result, log):
         print("close_dialog")
@@ -67,5 +70,5 @@ class TimerDialog(QDialog):
 
     def showEvent(self, event):
         print("show")
-        self.timer.start(1000)
+        self.timer.start(1600)
         super().showEvent(event)
