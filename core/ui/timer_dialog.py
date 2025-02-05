@@ -1,5 +1,5 @@
 from PyQt6.QtWidgets import QPushButton, QDialog, QLabel, QVBoxLayout
-from PyQt6.QtCore import QTimer
+from PyQt6.QtCore import QTimer, Qt
 
 
 class TimerDialog(QDialog):
@@ -11,11 +11,16 @@ class TimerDialog(QDialog):
         self.pass_cnt = 0
         self.test_key_name = ""
 
+        self.setWindowFlags(self.windowFlags() | Qt.WindowType.WindowStaysOnTopHint)
+
         self.init_dialog()
 
     def set_check_fun(self, check_fun, result_fun):
         self.check_fun = check_fun
         self.result_fun = result_fun
+
+    def set_save_fun(self, log_fun):
+        self.log_fun = log_fun
 
     def set_title_name(self, name):
         self.test_key_name = name
@@ -65,10 +70,10 @@ class TimerDialog(QDialog):
         print("close_dialog")
         self.result_fun(self.test_key_name, result, log)
         self.timer.stop()
+        self.log_fun()
         # self.deleteLater()
         self.close()
 
     def showEvent(self, event):
-        print("show")
         self.timer.start(1600)
         super().showEvent(event)

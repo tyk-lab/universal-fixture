@@ -11,6 +11,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QStandardItemModel, QStandardItem
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 
+from core.utils.log import Log
 from core.ui.timer_dialog import TimerDialog
 from core.utils.common import GlobalComm
 from core.utils.msg import CustomDialog
@@ -177,11 +178,25 @@ class TestRun(QWidget):
         self.dev_test.test_adxl345(self.time_dialog, self.start_timer_dialog_signal)
         # self.dev_test.test_rgbw()
         # self.dev_test.test_fan()
-        # self.dev_test.test_btn()
+        self.dev_test.test_btn()
         # self.dev_test.test_th()
         #  self.dev_test.test_extruder_th()
         # self.dev_test.test_motor()
         # self.dev_test.test_heats()
+        self.save_test_result()
+
+    def save_test_result(self):
+        log = Log()
+        key = self.line_edit.text().split("/")[-1]
+        for row in range(self.model.rowCount()):
+            # 提取每一列的数据
+            col0 = self.model.item(row, 0).text()
+            col1 = self.model.item(row, 1).text()
+            col2 = self.model.item(row, 2).text()
+            col3 = self.model.item(row, 3).text()
+
+            log.add_log_entry(key, col0, col1, col2, col3)
+        log.save_logs()
 
     # 跟使用到timerDialog的类关联
     def show_timer_dialog_test(self):
@@ -282,6 +297,7 @@ class TestRun(QWidget):
     ##################### event #######################
     def on_init_test_map(self):
         self.time_dialog = TimerDialog()
+        self.time_dialog.set_save_fun(self.save_test_result)
 
         test_mode = GlobalComm.setting_json["cur_test_mode"]
         self.action_list[test_mode]()
