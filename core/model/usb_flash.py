@@ -1,3 +1,4 @@
+from core.utils.opt_log import GlobalLogger
 from core.ui.loading import LoadingPanel
 from core.utils.Flash_thread import FlashThread
 from core.utils.common import GlobalComm
@@ -13,25 +14,33 @@ class UsbFlash:
 
     def check_flash_conditions(self):
         if not self.flash.check_firmware_suffix():
-            self.msg_dialog.show_warning(
-                GlobalComm.get_langdic_val("error_tip", "err_not_support_firmware")
+            err_tip = GlobalComm.get_langdic_val(
+                "error_tip", "err_not_support_firmware"
             )
+            GlobalLogger.log(err_tip)
+            self.msg_dialog.show_warning(err_tip)
             return False
 
         if not self.flash.check_lsusb_for_dev_boot():
-            self.msg_dialog.show_warning(
+            err_tip = GlobalLogger.log(
                 GlobalComm.get_langdic_val("error_tip", "err_not_in_boot")
             )
+
+            self.msg_dialog.show_warning(err_tip)
             return False
         return True
 
     def on_flash_complete(self, result):
+
+        GlobalLogger.log("flash ok")
+
         self.loading_git.stop_gif()
         isOk = self.flash.check_flash_finish(result)
         self.message_box.append(result)
         self.msg_dialog.show_flash_result(isOk)
 
     def on_flash_err(self, result, err):
+        GlobalLogger.log("flash error")
         self.loading_git.stop_gif()
         self.message_box.append(err)
         self.message_box.append("\r\n############################################\r\n")

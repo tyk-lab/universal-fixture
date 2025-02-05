@@ -18,6 +18,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QAction
 from PyQt6.QtCore import Qt
 
+from core.utils.opt_log import GlobalLogger
 from core.ui.run_test import TestRun
 from core.model.usb_flash import UsbFlash
 from core.utils.msg import CustomDialog
@@ -215,6 +216,9 @@ class MainWindow(QMainWindow):
             # 获取治具测试文件
             self.cfg_file_path = os.path.join(directory, cfg_file[0])
             print(self.cfg_file_path)
+
+            GlobalLogger.log("cfg file: " + f"{self.cfg_file_path}")
+
             self.message_box.append(
                 GlobalComm.get_langdic_val("view", "select_cfg_file")
                 + f"{self.cfg_file_path}"
@@ -251,6 +255,10 @@ class MainWindow(QMainWindow):
             self.new_window.show()
             return
 
+        GlobalLogger.log(
+            "\r\n" + GlobalComm.get_langdic_val("error_tip", "err_not_select_cfg")
+        )
+
         self.dialog.show_warning(
             GlobalComm.get_langdic_val("error_tip", "err_not_select_cfg")
         )
@@ -267,8 +275,11 @@ class MainWindow(QMainWindow):
             GlobalComm.setting_json["support_firmware"],
         )
 
+        GlobalLogger.log("\r\nselect file")
+
         if file_name:
             self.file_edit.setText(file_name)
+            GlobalLogger.log("file: " + f"{file_name}")
             self.message_box.append(
                 GlobalComm.get_langdic_val("view", "select_file") + f"{file_name}"
             )
@@ -277,10 +288,12 @@ class MainWindow(QMainWindow):
     def on_upload_firmware(self):
         if self.file_edit.text() and self.mcu_type:
             self.usb_flash.exec(self.mcu_type, self.file_edit.text())
+            GlobalLogger.log("\r\n flash file: " + self.file_edit.text())
         else:
-            self.dialog.show_warning(
-                GlobalComm.get_langdic_val("error_tip", "err_not_select_file")
-            )
+            err_tip = GlobalComm.get_langdic_val("error_tip", "err_not_select_file")
+
+            GlobalLogger.log("\r\n" + err_tip)
+            self.dialog.show_warning(err_tip)
 
     # todo
     def on_test(self):

@@ -1,5 +1,6 @@
 import subprocess
 
+from core.utils.opt_log import GlobalLogger
 from core.utils.common import GlobalComm
 import sh
 
@@ -34,9 +35,12 @@ class Flash:
         result = subprocess.run(["lsusb"], capture_output=True, text=True, check=True)
         dev = self.usb_devs[self.mcu_type]
 
+        GlobalLogger.log(result.stdout)
+
         for line in result.stdout.splitlines():
             if dev in line:
                 self.parts = line.split()
+                # todo, 不一定是第五个
                 usb_id = self.parts[5]
                 return usb_id
         return None
