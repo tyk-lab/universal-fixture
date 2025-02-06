@@ -219,7 +219,7 @@ class DevTest:
         klipper_state = self.klipper.is_connect(False)
         key = "adxl345"
 
-        if klipper_state:
+        if klipper_state and self.dev_dicts[key] != []:
             # if self.klipper.get_info(key) != {}:
             dialog.set_title_name(key)
             dialog.set_check_fun(self.dev.check_adxl345_state, self.show_sigle_result)

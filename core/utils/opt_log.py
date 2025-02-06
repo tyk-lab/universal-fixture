@@ -28,4 +28,8 @@ class GlobalLogger:
         # 将消息追加写入日志文件
         with open(cls.log_file_path, "a", encoding="utf-8") as log_file:
             log_file.write(message + "\n")
-        print(f"Logged: {message}")
+        # print(f"Logged: {message}")
+
+    @classmethod
+    def divider_head_log(cls, title):
+        cls.log(f"\r\n########################### {title}############################")

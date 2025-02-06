@@ -11,6 +11,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QStandardItemModel, QStandardItem
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 
+from core.utils.opt_log import GlobalLogger
 from core.utils.log import Log
 from core.ui.timer_dialog import TimerDialog
 from core.utils.common import GlobalComm
@@ -166,6 +167,7 @@ class TestRun(QWidget):
     ##################### Function function #######################
     def fixture_test(self):
         self.reset_model_ui()
+        GlobalLogger.divider_head_log("fixture_test")
 
         if self.update_cfg(True, self.cfg_path):
             self.loading_git.init_loading_QFrame()
@@ -188,6 +190,8 @@ class TestRun(QWidget):
     def save_test_result(self):
         log = Log()
         key = self.line_edit.text().split("/")[-1]
+
+        rows_info = []
         for row in range(self.model.rowCount()):
             # 提取每一列的数据
             col0 = self.model.item(row, 0).text()
@@ -195,7 +199,13 @@ class TestRun(QWidget):
             col2 = self.model.item(row, 2).text()
             col3 = self.model.item(row, 3).text()
 
+            rows_info.append([col0, col1, col2, col3])
             log.add_log_entry(key, col0, col1, col2, col3)
+
+        GlobalLogger.log("\r\nfixtrue test result")
+        GlobalLogger.log(key)
+        rows_info_str = "\r\n".join(" ".join(row) for row in rows_info)
+        GlobalLogger.log(rows_info_str)
         log.save_logs()
 
     # 跟使用到timerDialog的类关联
@@ -205,6 +215,9 @@ class TestRun(QWidget):
 
     def comm_test(self):
         if self.update_cfg(False, self.cfg_path):
+
+            GlobalLogger.divider_head_log("connect test")
+
             self.loading_git.init_loading_QFrame()
             self.loading_git.run_git()
             self.timer.start()
@@ -216,10 +229,12 @@ class TestRun(QWidget):
 
     def sigle_test(self):
         if self.update_cfg(True, self.cfg_path):
+            GlobalLogger.divider_head_log("sigle test")
             self.open_web_control()
 
     def power_test(self):
         if self.update_cfg(True, self.power_path):
+            GlobalLogger.divider_head_log("power test")
             self.creat_timer_test(self.power_test_result)
             self.timer.start()
             self.open_web_control()
@@ -231,6 +246,7 @@ class TestRun(QWidget):
         web_state = self.klipper.get_connect_info()
         state = web_state["state"]
         info_type = GlobalComm.get_langdic_val("view", "test_dev_type")
+        GlobalLogger.log("connect test result")
 
         # 异常未连接
         if err != "" or state != "ready":
@@ -238,6 +254,8 @@ class TestRun(QWidget):
                 ["lsusb"], capture_output=True, text=True, check=True
             )
             result = result.stdout.replace("\n", "\r\n")
+
+            GlobalLogger.log(result)
 
             if state != "ready":
                 err = web_state["state_message"]
@@ -252,6 +270,8 @@ class TestRun(QWidget):
             return False
 
         serial_id = "\n".join(self.last_result)
+        GlobalLogger.log(serial_id)
+        GlobalLogger.log("connect Successful")
         print(serial_id)
         log = web_state["state_message"] + "    " + "\r\n"
         raw_data = [

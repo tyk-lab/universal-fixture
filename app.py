@@ -236,6 +236,12 @@ class MainWindow(QMainWindow):
                 + f" File Suffix: {file_suffix}\r"
             )
 
+            GlobalLogger.log(
+                f"Board: {board}\t"
+                + f"MCU: {self.mcu_type}\t"
+                + f" File Suffix: {file_suffix}\r"
+            )
+
             if GlobalComm.test_enable:
                 print(f"Board: {board}\r")
                 print(f"MCU: {self.mcu_type}\r")
