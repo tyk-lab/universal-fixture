@@ -61,6 +61,13 @@ class TestRun(QWidget):
             mode_list["power"]: self.power_test,
         }
 
+        #! 检查配置文件中目标字段是否存在
+        key = "adxl345"
+        self.fields_to_check = {
+            "adxl345": False,
+        }
+        self.fields_to_check[key] = self.klipper.check_config_field(self.cfg_path, key)
+
     def init_ui(self):
         self.setWindowTitle(GlobalComm.get_langdic_val("view", "test_tile"))
 
@@ -177,11 +184,14 @@ class TestRun(QWidget):
 
     def fixture_test_result(self):
         self.dev_test.init_model()
-        self.dev_test.test_adxl345(self.time_dialog, self.start_timer_dialog_signal)
+
+        if self.fields_to_check["adxl345"] is True:
+            self.dev_test.test_adxl345(self.time_dialog, self.start_timer_dialog_signal)
+
         # self.dev_test.test_rgbw()
-        # self.dev_test.test_fan()
+        self.dev_test.test_fan()
         self.dev_test.test_btn()
-        # self.dev_test.test_th()
+        # self.dev_test.test_comm_th()
         #  self.dev_test.test_extruder_th()
         # self.dev_test.test_motor()
         # self.dev_test.test_heats()

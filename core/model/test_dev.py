@@ -2,6 +2,7 @@ from core.utils.common import GlobalComm
 from core.model.dev_info import DevInfo
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QStandardItem, QColor
+import traceback
 
 
 class DevTest:
@@ -15,7 +16,7 @@ class DevTest:
             "heater_bed": [],
             "extruder": [],
             "neopixel ": [],
-            "adxl345": [],  # 这个直接读读不出数据
+            # "adxl345": [],  # 这个直接读读不出数据
         }
 
         self.klipper = klipper
@@ -154,7 +155,7 @@ class DevTest:
                     self.dev.run_fan(set_val)
                     # # todo, 获取万能板中非三线的风速
                     # # 设返回的数据格式：{'fan2': 0.0, 'fan3': 0.0}
-                    fixture_dict = {"fan0": 0.0, "fan1": 0.0}
+                    fixture_dict = {"PCF": 0.0, "HEF": 0.0}
                     self.dev.check_fan_state(set_val, fixture_dict)
 
                     set_val = "0.2"
@@ -220,10 +221,13 @@ class DevTest:
         key = "adxl345"
 
         if klipper_state and self.dev_dicts[key] != []:
-            # if self.klipper.get_info(key) != {}:
-            dialog.set_title_name(key)
-            dialog.set_check_fun(self.dev.check_adxl345_state, self.show_sigle_result)
-            signal.emit()
+            cur = GlobalComm.setting_json["cur_test_cfg_file"]
+            if self.klipper.get_info(key) != {}:
+                dialog.set_title_name(key)
+                dialog.set_check_fun(
+                    self.dev.check_adxl345_state, self.show_sigle_result
+                )
+                signal.emit()
 
     def test_motor(self):
         klipper_state = self.klipper.is_connect(False)
