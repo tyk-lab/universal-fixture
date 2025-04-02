@@ -14,6 +14,7 @@ class UsbFlash:
 
     def check_flash_conditions(self):
         if not self.flash.check_firmware_suffix():
+            print("check_firmware_suffix")
             err_tip = GlobalComm.get_langdic_val(
                 "error_tip", "err_not_support_firmware"
             )
@@ -22,10 +23,9 @@ class UsbFlash:
             return False
 
         if not self.flash.check_lsusb_for_dev_boot():
-            err_tip = GlobalLogger.log(
-                GlobalComm.get_langdic_val("error_tip", "err_not_in_boot")
-            )
-
+            print("check_lsusb_for_dev_boot")
+            err_tip = GlobalComm.get_langdic_val("error_tip", "err_not_in_boot")
+            GlobalLogger.log(err_tip)
             self.msg_dialog.show_warning(err_tip)
             return False
         return True
@@ -52,7 +52,6 @@ class UsbFlash:
 
         if self.check_flash_conditions():
             self.loading_git.run_git()
-
             self.analysis_thread = FlashThread(self.flash)
             self.analysis_thread.bind_event(self.on_flash_complete, self.on_flash_err)
             self.analysis_thread.start()
