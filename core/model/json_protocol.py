@@ -22,6 +22,12 @@ class FrameType(IntEnum):
     Shucdown = 4
 
 
+def build_key_json(port, dev_name, value=None):
+    if value != None:
+        return {"port": port, "name": dev_name, "value": str(value)}
+    return {"port": port, "name": dev_name}
+
+
 # todo, 补充log和异常处理
 def receive_and_parse_frame(ser):
     # 帧头定义

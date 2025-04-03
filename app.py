@@ -24,6 +24,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QAction
 from PyQt6.QtCore import Qt
 
+from core.utils.exception.ex_file import FileNotFoundCustomError
 from core.utils.opt_log import GlobalLogger
 from core.ui.run_test import TestRun
 from core.model.usb_flash import UsbFlash
@@ -209,19 +210,27 @@ class MainWindow(QMainWindow):
         # 获取文件所在目录
         directory = os.path.dirname(file_name)
 
-        # 查找目录下的cfg文件
-        cfg_files = [f for f in os.listdir(directory) if f.endswith(".cfg")]
-
-        # 获取功率测试cfg文件
         self.power_cfg_path = None
         self.mcu_type = None
-        power_test_file = GlobalComm.setting_json["power_test_file"]
 
         try:
+            # 查找目录下的cfg文件
+            cfg_files = [f for f in os.listdir(directory) if f.endswith(".cfg")]
             cfg_file = [f for f in cfg_files if "test" in f]
-
             if cfg_files == [] or cfg_file == []:
-                raise Exception()
+                raise FileNotFoundCustomError(
+                    directory,
+                    GlobalComm.get_langdic_val("error_tip", "err_cfg_file_not_found"),
+                )
+
+            # 查找目录下的cfg文件
+            port_files = [f for f in os.listdir(directory) if f.endswith(".json")]
+            port_file = [f for f in cfg_files if "port" in f]
+            if port_files == [] or port_file == []:
+                raise FileNotFoundCustomError(
+                    directory,
+                    GlobalComm.get_langdic_val("error_tip", "err_port_file_not_found"),
+                )
 
             # 获取治具测试文件
             self.cfg_file_path = os.path.join(directory, cfg_file[0])
@@ -235,6 +244,7 @@ class MainWindow(QMainWindow):
             )
 
             # 获取功率测试文件
+            power_test_file = GlobalComm.setting_json["power_test_file"]
             if power_test_file in cfg_files:
                 self.power_cfg_path = os.path.join(directory, power_test_file)
             print(self.power_cfg_path)
@@ -257,17 +267,18 @@ class MainWindow(QMainWindow):
                 print(f"MCU: {self.mcu_type}\r")
                 print(f"File Suffix: {file_suffix}\r")
 
-        except Exception as e:
-            self.message_box.append(
-                GlobalComm.get_langdic_val("error_tip", "err_cfg_file_not_found")
-            )
-            self.dialog.show_warning(
-                GlobalComm.get_langdic_val("error_tip", "err_cfg_file_not_found")
-            )
+            # 获取端口文件
+            self.port_cfg_file = port_file
+
+        except FileNotFoundCustomError as e:
+            self.message_box.append(e.message)
+            self.dialog.show_warning(e.message)
 
     def open_new_window(self):
         if self.cfg_file_path != "":
-            self.new_window = TestRun(self.cfg_file_path, self.power_cfg_path)
+            self.new_window = TestRun(
+                self.cfg_file_path, self.power_cfg_path, self.port_cfg_file
+            )
             self.new_window.show()
             return
 

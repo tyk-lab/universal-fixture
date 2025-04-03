@@ -18,7 +18,7 @@ from PyQt6.QtGui import QStandardItemModel, QStandardItem
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 
 from core.utils.opt_log import GlobalLogger
-from core.utils.log import Log
+from core.utils.test_result_log import Log
 from core.ui.timer_dialog import TimerDialog
 from core.utils.common import GlobalComm
 from core.utils.msg import CustomDialog
@@ -35,14 +35,14 @@ import subprocess
 class TestRun(QWidget):
     start_timer_dialog_signal = pyqtSignal()
 
-    def __init__(self, cfg_path, power_path):
+    def __init__(self, cfg_path, power_path, port_path):
         super().__init__()
-        self.init_data(cfg_path, power_path)
+        self.init_data(cfg_path, power_path, port_path)
         self.init_ui()
 
         self.start_timer_dialog_signal.connect(self.show_timer_dialog_test)
 
-    def init_data(self, cfg_path, power_path):
+    def init_data(self, cfg_path, power_path, port_path):
         # 创建测试必须的对象
         self.klipper = KlipperService()
         self.config = PrinterConfig()
@@ -57,6 +57,7 @@ class TestRun(QWidget):
         self.last_result = ""
         self.cfg_path = cfg_path
         self.power_path = power_path
+        self.port_path = port_path
         self.loading_git = LoadingPanel(self)
 
         # 测试模式映射， 跟setting标识一致
