@@ -1,3 +1,9 @@
+"""
+@File    :   parse.py
+@Time    :   2025/04/03
+@Desc    :   Information about parsing klipper configuration files
+"""
+
 import configparser
 import re
 

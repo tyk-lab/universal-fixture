@@ -1,3 +1,9 @@
+"""
+@File    :   msg.py
+@Time    :   2025/04/03
+@Desc    :   message board
+"""
+
 from PyQt6.QtWidgets import (
     QDialog,
     QVBoxLayout,

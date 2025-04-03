@@ -1,7 +1,7 @@
 """
 @File    :   dev_info.py
 @Time    :   2025/04/03
-@Desc    :
+@Desc    :   Obtain product and gage information to determine compliance with requirements
 """
 
 
@@ -19,6 +19,15 @@ class DevInfo:
 
         return self.dev_dicts
 
+    ############################ btn Equipment Related ############################
+
+    #!todo, 需要初始化设备后才能操作
+    # Operate the inspection board to get the corresponding status
+    def otp_detection_btn_state(self, level):
+        # 设置检测板的电平
+        pass
+
+    # Manipulate the product board to get the corresponding status
     def get_btn_state(self):
         key = "gcode_button "
         result_dict = {}
@@ -28,6 +37,7 @@ class DevInfo:
                 result_dict[key] = value["state"] == "RELEASED"
         return result_dict
 
+    # Check that the function is eligible
     def check_btn_state(self, state):
         result_dict = self.get_btn_state()
 
@@ -45,6 +55,8 @@ class DevInfo:
                 else:
                     result_dict[key] = True
             raise Exception(result_dict, log_dict)
+
+    ############################## th Equipment Related ############################
 
     def get_th_state(self, key):
         result_dict = {}
@@ -73,6 +85,8 @@ class DevInfo:
                 has_exception = True
         if has_exception:
             raise Exception(result_dict, log_dict)
+
+    ############################## fan Equipment Related ############################
 
     def get_fan_state(self):
         key = "fan_generic "
@@ -118,8 +132,12 @@ class DevInfo:
         if has_exception:
             raise Exception(result_dict, log_dict)
 
+    ############################## heat Equipment Related ############################
+
     def run_heat(self, value):
         self.klipper.run_test_gcode("_TEST_HEATS VAL=" + value)
+
+    ############################## rgbw Equipment Related ############################
 
     def run_rgbw(self, key):
         color_dict = {
@@ -182,6 +200,8 @@ class DevInfo:
         if has_exception:
             raise Exception(result_dict, log_dict)
 
+    ############################## adxl345 Equipment Related ############################
+
     def check_adxl345_state(self, inaccuracies=1000):
         if self.klipper.is_connect(False):
             cur_val = self.klipper.accelerometer_run()
@@ -208,6 +228,8 @@ class DevInfo:
 
     #     # 结果，差异值, 当前的标准值,
     #     return (True, 200, [3, 3, 3], [3, random.random(), random.random()])
+
+    ############################## motor Equipment Related ############################
 
     def run_motor(self, dir):
         self.klipper.run_test_gcode("_TEST_MOTOR_A_LOOP DIR=" + dir)

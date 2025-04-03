@@ -1,3 +1,9 @@
+"""
+@File    :   common.py
+@Time    :   2025/04/03
+@Desc    :   Managing global information
+"""
+
 import json
 import os
 from core.utils.msg import CustomDialog

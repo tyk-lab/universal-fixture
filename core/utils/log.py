@@ -1,3 +1,9 @@
+"""
+@File    :   log.py
+@Time    :   2025/04/03
+@Desc    :   Record equipment test results during testing
+"""
+
 import os
 import json
 from datetime import datetime
