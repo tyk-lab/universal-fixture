@@ -1,3 +1,9 @@
+"""
+@File    :   run_test.py
+@Time    :   2025/04/03
+@Desc    :   test interface
+"""
+
 import webbrowser
 from PyQt6.QtWidgets import (
     QPushButton,

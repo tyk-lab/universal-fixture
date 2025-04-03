@@ -1,3 +1,9 @@
+"""
+@File    :   test_dev.py
+@Time    :   2025/04/03
+@Desc    :   Define the device testing process and callback related results
+"""
+
 from core.utils.common import GlobalComm
 from core.model.dev_info import DevInfo
 from PyQt6.QtCore import Qt

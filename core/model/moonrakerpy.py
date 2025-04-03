@@ -1,3 +1,9 @@
+"""
+@File    :   moonrakerpy.py
+@Time    :   2025/04/03
+@Desc    :   As an interface for klipper command operations
+"""
+
 from requests import get, post
 
 

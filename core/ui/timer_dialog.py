@@ -1,3 +1,9 @@
+"""
+@File    :   timer_dialog.py
+@Time    :   2025/04/03
+@Desc    :   Dialog UI for Timed Polling Checks
+"""
+
 from PyQt6.QtWidgets import QPushButton, QDialog, QLabel, QVBoxLayout
 from PyQt6.QtCore import QTimer, Qt
 

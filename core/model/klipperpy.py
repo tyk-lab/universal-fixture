@@ -1,3 +1,9 @@
+"""
+@File    :   klipperpy.py
+@Time    :   2025/04/03
+@Desc    :   Implement klipper related operations
+"""
+
 from core.model.moonrakerpy import MoonrakerPrinter
 from core.utils.common import GlobalComm
 

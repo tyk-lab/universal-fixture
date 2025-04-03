@@ -1,3 +1,9 @@
+"""
+@File    :   loading.py
+@Time    :   2025/04/03
+@Desc    :   Loading animation
+"""
+
 from PyQt6.QtWidgets import (
     QVBoxLayout,
     QLabel,

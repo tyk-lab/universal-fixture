@@ -1,3 +1,9 @@
+"""
+@File    :   usb_flash.py
+@Time    :   2025/04/03
+@Desc    :   Implementing an asynchronous usb burn-in process
+"""
+
 from core.utils.opt_log import GlobalLogger
 from core.ui.loading import LoadingPanel
 from core.utils.Flash_thread import FlashThread

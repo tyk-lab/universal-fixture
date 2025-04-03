@@ -1,3 +1,9 @@
+"""
+@File    :   app.py
+@Time    :   2025/04/03
+@Desc    :   Define the main interface logic
+"""
+
 import os
 import sys
 import locale
@@ -133,6 +139,11 @@ class MainWindow(QMainWindow):
         file_layout.addWidget(self.file_edit)
 
         open_button.clicked.connect(self.on_open_file)
+        #!todo 临时测试
+        self.power_cfg_path = None
+        self.cfg_file_path = "/home/test/Test/firmware/pico/printer-pico-test.cfg"
+        self.file_edit.setText(self.cfg_file_path)
+        #!todo end
 
         # 第二行：烧录按钮和测试按钮
         action_layout = QHBoxLayout()
@@ -205,7 +216,6 @@ class MainWindow(QMainWindow):
         self.power_cfg_path = None
         self.mcu_type = None
         power_test_file = GlobalComm.setting_json["power_test_file"]
-        print(power_test_file)
 
         try:
             cfg_file = [f for f in cfg_files if "test" in f]
@@ -297,7 +307,6 @@ class MainWindow(QMainWindow):
             GlobalLogger.log("\r\n flash file: " + self.file_edit.text())
         else:
             err_tip = GlobalComm.get_langdic_val("error_tip", "err_not_select_file")
-
             GlobalLogger.log("\r\n" + err_tip)
             self.dialog.show_warning(err_tip)
 

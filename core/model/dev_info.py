@@ -1,3 +1,10 @@
+"""
+@File    :   dev_info.py
+@Time    :   2025/04/03
+@Desc    :
+"""
+
+
 class DevInfo:
     def __init__(self, klipper, dicts):
         self.klipper = klipper

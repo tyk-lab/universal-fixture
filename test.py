@@ -1,53 +1,36 @@
-import sys
-from PyQt6.QtWidgets import QApplication, QDialog, QVBoxLayout, QLabel, QPushButton
-from PyQt6.QtCore import pyqtSignal, QObject
+import os
+from datetime import datetime
 
 
-# 自定义信号类
-class Controller(QObject):
-    close_signal = pyqtSignal()
+class GlobalLogger:
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super(GlobalLogger, cls).__new__(cls)
+            cls._instance._initialize()
+        return cls._instance
+
+    def _initialize(self):
+        # 初始化日志目录
+        self.log_dir = os.path.join(os.getcwd(), "log")
+        # 获取当前日期，格式为 YYYY-MM-DD
+        current_date = datetime.now().strftime("%Y-%m-%d")
+        # 创建日期目录
+        self.date_dir = os.path.join(self.log_dir, current_date)
+        if not os.path.exists(self.date_dir):
+            os.makedirs(self.date_dir)
+        # 设置日志文件路径
+        self.log_file_path = os.path.join(self.date_dir, "test_opt.log")
+
+    def log(self, message):
+        # 将消息追加写入日志文件
+        with open(self.log_file_path, "a", encoding="utf-8") as log_file:
+            log_file.write(message + "\n")
+        print(f"Logged: {message}")
 
 
-# 自定义弹窗类
-class ControlledDialog(QDialog):
-    def __init__(self, controller):
-        super().__init__()
-
-        self.setWindowTitle("受控弹窗")
-        self.layout = QVBoxLayout()
-        self.label = QLabel("等待关闭信号...")
-        self.layout.addWidget(self.label)
-        self.setLayout(self.layout)
-
-        # 连接信号到槽
-        controller.close_signal.connect(self.close_window)
-
-    def close_window(self):
-        self.label.setText("收到关闭信号，窗口即将关闭...")
-        self.accept()  # 关闭窗口
-
-
-def main():
-    app = QApplication(sys.argv)
-
-    # 创建信号控制器
-    controller = Controller()
-
-    # 创建并显示弹窗
-    dialog = ControlledDialog(controller)
-    dialog.show()
-
-    # 模拟一段时间后发射关闭信号
-    def emit_signal():
-        controller.close_signal.emit()
-
-    # 创建一个按钮来手动触发信号（用于演示）
-    button = QPushButton("关闭弹窗")
-    button.clicked.connect(emit_signal)
-    button.show()
-
-    sys.exit(app.exec())
-
-
-if __name__ == "__main__":
-    main()
+# 示例使用
+logger = GlobalLogger()
+logger.log("This is a test log message.")
+logger.log("Another log entry.")

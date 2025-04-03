@@ -1,3 +1,9 @@
+"""
+@File    :   table.py
+@Time    :   2025/04/03
+@Desc    :   Extend QTableView to double click on a cell to pop up a dialogue box
+"""
+
 from PyQt6.QtWidgets import QTableView
 
 import core.utils.common

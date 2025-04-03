@@ -1,3 +1,9 @@
+"""
+@File    :   flash.py
+@Time    :   2025/04/03
+@Desc    :   Enables burning of device firmware
+"""
+
 import subprocess
 
 from core.utils.opt_log import GlobalLogger
