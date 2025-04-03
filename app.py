@@ -29,7 +29,7 @@ from core.ui.run_test import TestRun
 from core.model.usb_flash import UsbFlash
 from core.utils.msg import CustomDialog
 from core.utils.common import GlobalComm
-from core.utils.parse import parse_cfg_flash_info
+from core.utils.parse_klipper_cfg_file import parse_cfg_flash_info
 
 
 class MainWindow(QMainWindow):

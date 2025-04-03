@@ -49,11 +49,21 @@ def parse_cfg_flash_info(file_path):
 
     return board, mcu, file_suffix
 
+    # 示例调用(debug)
+    # board, mcu, file_suffix = parse_cfg_flash_info(
+    #     "/home/test/Test/core/utils/klipper_printer.cfg"
+    # )
+    # print(f"Board: {board}")
+    # print(f"MCU: {mcu}")
+    # print(f"File Suffix: {file_suffix}")
 
-# 示例调用(debug)
-# board, mcu, file_suffix = parse_cfg_flash_info(
-#     "/home/test/Test/core/utils/klipper_printer.cfg"
-# )
-# print(f"Board: {board}")
-# print(f"MCU: {mcu}")
-# print(f"File Suffix: {file_suffix}")
+
+def check_config_field(config_path, field):
+    if not isinstance(config_path, str) or not config_path:
+        return False
+
+    with open(config_path, "r", encoding="utf-8") as f:
+        for line in f:
+            if field in line:
+                return True
+    return False

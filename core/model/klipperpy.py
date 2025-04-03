@@ -68,14 +68,3 @@ class KlipperService:
         sensors = self.printer.list_sensors(key)
         dicts = self.printer.query_sensors(sensors, key)
         return list(dicts.keys())
-
-    def check_config_field(self, config_path, field):
-        if not isinstance(config_path, str) or not config_path:
-            return False
-
-        with open(config_path, "r", encoding="utf-8") as f:
-            for line in f:
-                # 去除行首尾空白后判断是否等于指定字段
-                if field in line:
-                    return True
-        return False

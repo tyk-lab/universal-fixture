@@ -28,6 +28,7 @@ from core.model.test_dev import DevTest
 from core.ui.table import CustomTableView
 from core.model.klipperpy import KlipperService
 from core.model.printer_cfg import PrinterConfig
+from core.utils.parse_klipper_cfg_file import check_config_field
 import subprocess
 
 
@@ -72,7 +73,7 @@ class TestRun(QWidget):
         self.fields_to_check = {
             "adxl345": False,
         }
-        self.fields_to_check[key] = self.klipper.check_config_field(self.cfg_path, key)
+        self.fields_to_check[key] = check_config_field(self.cfg_path, key)
 
     def init_ui(self):
         self.setWindowTitle(GlobalComm.get_langdic_val("view", "test_tile"))
