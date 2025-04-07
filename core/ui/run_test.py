@@ -139,7 +139,7 @@ class TestRun(QWidget):
             )
             return False
 
-        # 更新配置文件信息
+        # Updating profile information
         if self.last_result != self.result:
             GlobalLogger.debug_print("update cfg file")
             self.line_edit.setText(", ".join(self.result))

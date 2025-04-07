@@ -21,7 +21,11 @@ class PrinterConfig:
     def get_serial_paths(self, directory="/dev/serial/by-id"):
         # 获取目录下的所有文件路径
         try:
-            serial_paths = [os.path.join(directory, f) for f in os.listdir(directory)]
+            serial_paths = [
+                os.path.join(directory, f)
+                for f in os.listdir(directory)
+                if "klipper" in f.lower()
+            ]
         except FileNotFoundError:
             return False
         return serial_paths
