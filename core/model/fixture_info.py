@@ -39,18 +39,22 @@ class FixtureInfo:
             self.dev_frame_dict[dev_module] = frame_info
             send_json_frame(self.serial_dev, FrameType.Cfg, frame_info)
 
+    def sync_dev(self, frame_type):
+        self.send_command_and_format_result(frame_type, "syncSQ")
+
     # 执行这个函数，说明port文件已经存在且正确，而串口若不存在则可在界面和log中查看
     def init_fixture(self):
+
         if self.serial_dev == None:
             self.serial_dev = serial.Serial(self.serial_port, 9600, timeout=1)
 
         if self.serial_dev.is_open is False:
             self.serial_dev.open()
 
-        # 若没连接，则连接串口并配置端口信息
-        with open(self.port_path, "r", encoding="utf-8") as f:
-            self.port_json = json.load(f)
-            self._init_port_info()
+        if self.dev_frame_dict == {}:
+            with open(self.port_path, "r", encoding="utf-8") as f:
+                self.port_json = json.load(f)
+                self._init_port_info()
 
     def _wait_fixture_reply(self):
         wait_time_cnt = 0
@@ -73,10 +77,10 @@ class FixtureInfo:
         转为信息判断的格式：
         {'rgw0': '0.9, 0.0, 0.1', 'rgw1': '0.9, 0.0, 0.1', 'rgw2': '0.9, 0.0, 0.1'}
         """
-        data = json.loads(reply)
+
         fixture_dict = {}
-        for item in data["Reply"]:
-            fixture_dict.update(item)
+        for sub_dict in reply["Reply"]:
+            fixture_dict.update(sub_dict)
         return fixture_dict
 
     def send_command(self, frame_type, dev_type, value):
@@ -100,9 +104,10 @@ class FixtureInfo:
         dev_type: btnSV，fanSQ，协议中的设备类（在port的json文件中的key上）
         """
         send_json_frame(self.serial_dev, frame_type, self.dev_frame_dict[dev_type])
-        reply = self.wait_fixture_reply()
+        reply = self._wait_fixture_reply()
         if reply != None:
-            return self._format_reply_info(reply)
+            fixture_dict = self._format_reply_info(reply)
+            return fixture_dict
         return None
 
     def is_connect(self, exec_init=False):

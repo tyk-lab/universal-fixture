@@ -48,7 +48,7 @@ def receive_and_parse_frame(ser):
             # 解析帧头
             start_byte, msgid, data_size = struct.unpack("<BBI", header_data)
 
-            # print(start_byte, msgid, data_size)
+            # GlobalLogger.debug_print("state data: ", start_byte, msgid, data_size)
 
             # 验证帧头
             if start_byte == FRAME_START:
@@ -59,7 +59,7 @@ def receive_and_parse_frame(ser):
                     # 尝试解析为JSON
                     json_data = json.loads(data.decode("utf-8"))
                     GlobalLogger.debug_print("收到JSON数据：", json_data)
-                    GlobalLogger.log(json_data)
+                    GlobalLogger.log("send_command_and_format_result:" + str(json_data))
                     return json_data
                 else:
                     raise TestFrameLengthException()
@@ -67,8 +67,9 @@ def receive_and_parse_frame(ser):
                 raise TestFrameBeginException()
     except Exception as e:
         print("数据帧接收解析错误：", e)
-        dialog = CustomDialog()
         GlobalLogger.log(str(e))
+
+        dialog = CustomDialog()
         dialog.show_warning(str(e))
         return None
 

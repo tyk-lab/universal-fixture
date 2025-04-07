@@ -102,6 +102,7 @@ class DevTest:
             try:
                 if self.dev_dicts[key] != []:
                     GlobalLogger.divider_head_log("test_btn")
+                    self.fixtrue.sync_dev(FrameType.Sync)
                     self.fixtrue.send_command(FrameType.Opt, "btnSV", "1")
                     self.dev.check_btn_state(True)
 
