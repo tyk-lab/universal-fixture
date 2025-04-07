@@ -29,17 +29,19 @@ class PrinterConfig:
     def generate_config(self, serial_paths, cfg_path=None):
         # 生成配置文本
         config_lines = ["[include fluidd.cfg]\r\n"]
+        cfg_mcu = False
 
         if self.is_composite_file_test:
             cfg_name = os.path.basename(cfg_path)
             config_lines.append("[include " + cfg_name + "]")
 
         for i, path in enumerate(serial_paths):
-            if i == 0:
-                config_lines.append("[mcu]")
-            else:
-                config_lines.append(f"[mcu a{i}]")
-            config_lines.append(f"serial: {path}\r\n")
+            if "Klipper" in path:
+                if i == 0 or cfg_mcu is False:
+                    config_lines.append("[mcu]")
+                else:
+                    config_lines.append(f"[mcu a{i}]")
+                config_lines.append(f"serial: {path}\r\n")
 
         config_lines.extend(
             [

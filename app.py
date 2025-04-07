@@ -140,11 +140,6 @@ class MainWindow(QMainWindow):
         file_layout.addWidget(self.file_edit)
 
         open_button.clicked.connect(self.on_open_file)
-        #!todo 临时测试
-        self.power_cfg_path = None
-        self.cfg_file_path = "/home/test/Test/firmware/pico/printer-pico-test.cfg"
-        self.file_edit.setText(self.cfg_file_path)
-        #!todo end
 
         # 第二行：烧录按钮和测试按钮
         action_layout = QHBoxLayout()
@@ -223,18 +218,21 @@ class MainWindow(QMainWindow):
                     GlobalComm.get_langdic_val("error_tip", "err_cfg_file_not_found"),
                 )
 
-            # 查找目录下的cfg文件
-            port_files = [f for f in os.listdir(directory) if f.endswith(".json")]
-            port_file = [f for f in cfg_files if "port" in f]
-            if port_files == [] or port_file == []:
+            # 查找目录下的port文件
+            port_file = [f for f in os.listdir(directory) if f.endswith(".json")]
+            if port_file == []:
                 raise FileNotFoundCustomError(
                     directory,
                     GlobalComm.get_langdic_val("error_tip", "err_port_file_not_found"),
                 )
 
+            # 获取治具端口文件
+            self.port_path = os.path.join(directory, port_file[0])
+            print("port_path:", self.cfg_file_path)
+
             # 获取治具测试文件
             self.cfg_file_path = os.path.join(directory, cfg_file[0])
-            print(self.cfg_file_path)
+            print("cfg_file_path:", self.cfg_file_path)
 
             GlobalLogger.log("cfg file: " + f"{self.cfg_file_path}")
 
@@ -247,7 +245,7 @@ class MainWindow(QMainWindow):
             power_test_file = GlobalComm.setting_json["power_test_file"]
             if power_test_file in cfg_files:
                 self.power_cfg_path = os.path.join(directory, power_test_file)
-            print(self.power_cfg_path)
+            print("power_cfg_path:", self.power_cfg_path)
 
             board, self.mcu_type, file_suffix = parse_cfg_flash_info(self.cfg_file_path)
             self.message_box.append(
@@ -262,13 +260,9 @@ class MainWindow(QMainWindow):
                 + f" File Suffix: {file_suffix}\r"
             )
 
-            if GlobalComm.test_enable:
-                print(f"Board: {board}\r")
-                print(f"MCU: {self.mcu_type}\r")
-                print(f"File Suffix: {file_suffix}\r")
-
-            # 获取端口文件
-            self.port_cfg_file = port_file
+            print(f"Board: {board}\r")
+            print(f"MCU: {self.mcu_type}\r")
+            print(f"File Suffix: {file_suffix}\r")
 
         except FileNotFoundCustomError as e:
             self.message_box.append(e.message)
@@ -277,7 +271,7 @@ class MainWindow(QMainWindow):
     def open_new_window(self):
         if self.cfg_file_path != "":
             self.new_window = TestRun(
-                self.cfg_file_path, self.power_cfg_path, self.port_cfg_file
+                self.cfg_file_path, self.power_cfg_path, self.port_path
             )
             self.new_window.show()
             return

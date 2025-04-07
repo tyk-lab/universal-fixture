@@ -4,6 +4,7 @@
 @Desc    :   Define the device testing process and callback related results
 """
 
+from core.model.json_protocol import FrameType
 from core.utils.common import GlobalComm
 from core.model.dev_info import DevInfo
 from PyQt6.QtCore import Qt
@@ -14,7 +15,7 @@ from core.utils.exception.ex_test import TestConnectException, TestFailureExcept
 
 
 class DevTest:
-    def __init__(self, klipper):
+    def __init__(self, klipper, fixtrue):
         # 类型下的设备表
         self.dev_dicts = {
             "gcode_button ": [],
@@ -28,6 +29,7 @@ class DevTest:
         }
 
         self.klipper = klipper
+        self.fixtrue = fixtrue
         self.dev = DevInfo(klipper, self.dev_dicts)
 
     def set_update_callback(self, add_row_callback, modify_row_callback):
@@ -84,28 +86,33 @@ class DevTest:
         )
 
     def _test_exception(self, e, key):
+
         result_dict = e.args[0]  # 从异常中获取列表
         log_dict = e.args[1]
         self.show_result(key, log_dict, result_dict)
 
     def test_btn(self):
-        # todo,命令开始前，判断下两边的状态
+        from core.utils.opt_log import GlobalLogger
+
         klipper_state = self.klipper.is_connect(False)
+        fixture_state = self.fixtrue.is_connect()
         key = "gcode_button "
 
-        if klipper_state:
+        if klipper_state and fixture_state:
             try:
                 if self.dev_dicts[key] != []:
-                    # todo，控制万能板输出(每个指令必须有回复)
+                    GlobalLogger.divider_head_log("test_btn")
+                    self.fixtrue.send_command(FrameType.Opt, "btnSV", "1")
                     self.dev.check_btn_state(True)
 
-                    # todo，控制万能板关闭(每个指令必须有回复)
+                    self.fixtrue.send_command(FrameType.Opt, "btnSV", "0")
                     self.dev.check_btn_state(False)
 
                     self.show_result(key)
-                    return
             except TestFailureException as e:
                 self._test_exception(e, key)
+            except Exception as e:
+                print("发生异常: %s\n%s", str(e), traceback.format_exc())
         else:
             # todo,更新治具状态
             self._raise_connect_exception(klipper_state, False)

@@ -16,7 +16,6 @@ from core.utils.exception.ex_test import (
     TestFrameBeginException,
     TestFrameLengthException,
 )
-from core.utils.msg import CustomDialog
 
 
 # Defining the frame type
@@ -35,6 +34,9 @@ def build_key_json(port, dev_name, value=None):
 
 
 def receive_and_parse_frame(ser):
+    from core.utils.msg import CustomDialog
+    from core.utils.opt_log import GlobalLogger
+
     # 帧头定义
     FRAME_START = 0x5F
     HEADER_SIZE = 6  # startByte(1) + msgid(1) + dataSize(4)
@@ -56,7 +58,8 @@ def receive_and_parse_frame(ser):
                 if len(data) == data_size:
                     # 尝试解析为JSON
                     json_data = json.loads(data.decode("utf-8"))
-                    print("收到JSON数据：", json_data)
+                    GlobalLogger.debug_print("收到JSON数据：", json_data)
+                    GlobalLogger.log(json_data)
                     return json_data
                 else:
                     raise TestFrameLengthException()
@@ -65,11 +68,14 @@ def receive_and_parse_frame(ser):
     except Exception as e:
         print("数据帧接收解析错误：", e)
         dialog = CustomDialog()
+        GlobalLogger.log(str(e))
         dialog.show_warning(str(e))
         return None
 
 
 def send_json_frame(ser, infoId, payload):
+    from core.utils.opt_log import GlobalLogger
+
     # 帧头定义
     FRAME_START = 0x5F
     MSGID = infoId
@@ -82,11 +88,13 @@ def send_json_frame(ser, infoId, payload):
     # 打包帧头
     frame_header = struct.pack("<BBI", FRAME_START, MSGID, data_size)
     frame = frame_header + json_data
+    GlobalLogger.log("send_json_frame： " + frame.decode("utf-8"))
 
     # 分块发送
     chunk_size = 64
     for i in range(0, len(frame), chunk_size):
         chunk = frame[i : i + chunk_size]
         # print(f"发送第 {i//chunk_size + 1} 块，{chunk_size} 字节")
+        # GlobalLogger.debug_print(chunk)
         ser.write(chunk)
         ser.flush()

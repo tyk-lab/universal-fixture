@@ -5,27 +5,30 @@
 """
 
 import json
-
+import os
+import serial
+import time
 from core.model.json_protocol import (
     build_key_json,
     FrameType,
     send_json_frame,
     receive_and_parse_frame,
 )
-from core.utils.common import GlobalComm
-from core.utils.opt_log import GlobalLogger
 
 
 class FixtureInfo:
-    def __init__(self, port_path, serial):
+    def __init__(self, port_path, serial_port):
         self.port_path = port_path
-        self.serial = serial
+        self.serial_port = serial_port
+        self.serial_dev = None
         self.dev_frame_dict = {}
 
     # Initialise the device frame dictionary and initialise the device
     def _init_port_info(self):
+        self.dev_frame_dict.clear()
+
         for dev_module, items in self.port_json.items():
-            need_send_value = 0 if "V" in dev_module else None
+            need_send_value = "0" if "V" in dev_module else None
 
             frame_info = {dev_module: []}
             if dev_module != None:
@@ -34,20 +37,27 @@ class FixtureInfo:
                     frame_info[dev_module].append(key_json)
 
             self.dev_frame_dict[dev_module] = frame_info
-            send_json_frame(self.serial, FrameType.Cfg, frame_info)
+            send_json_frame(self.serial_dev, FrameType.Cfg, frame_info)
 
-    #!todo, 可能会引发异常，如串口不存在等
+    # 执行这个函数，说明port文件已经存在且正确，而串口若不存在则可在界面和log中查看
     def init_fixture(self):
+        if self.serial_dev == None:
+            self.serial_dev = serial.Serial(self.serial_port, 9600, timeout=1)
+
+        if self.serial_dev.is_open is False:
+            self.serial_dev.open()
+
+        # 若没连接，则连接串口并配置端口信息
         with open(self.port_path, "r", encoding="utf-8") as f:
             self.port_json = json.load(f)
-            self.init_port_info(self.serial)
+            self._init_port_info()
 
     def _wait_fixture_reply(self):
         wait_time_cnt = 0
         while True:
             wait_time_cnt += 1
-            if self.serial.in_waiting:
-                return receive_and_parse_frame(self.serial)
+            if self.serial_dev.in_waiting:
+                return receive_and_parse_frame(self.serial_dev)
 
             if wait_time_cnt > 3000000:
                 return None
@@ -69,9 +79,36 @@ class FixtureInfo:
             fixture_dict.update(item)
         return fixture_dict
 
+    def send_command(self, frame_type, dev_type, value):
+        """
+        只适用用设备类型带“V”的key
+        """
+
+        from core.utils.opt_log import GlobalLogger
+
+        # GlobalLogger.debug_print("dev_frame_dict:\r\n", self.dev_frame_dict)
+
+        for btn in self.dev_frame_dict[dev_type].get(dev_type, []):
+            btn["value"] = value
+        send_json_frame(self.serial_dev, frame_type, self.dev_frame_dict[dev_type])
+        # time.sleep(0.1)
+
     def send_command_and_format_result(self, frame_type, dev_type):
-        send_json_frame(self.serial, frame_type, self.dev_frame_dict[dev_type])
+        """
+        发送控制指令，接收相关数据
+        frame_type: class FrameType(IntEnum)相关数据
+        dev_type: btnSV，fanSQ，协议中的设备类（在port的json文件中的key上）
+        """
+        send_json_frame(self.serial_dev, frame_type, self.dev_frame_dict[dev_type])
         reply = self.wait_fixture_reply()
         if reply != None:
             return self._format_reply_info(reply)
         return None
+
+    def is_connect(self, exec_init=False):
+        if os.path.exists(self.serial_port) and self.serial_dev.is_open:
+            return True
+        elif exec_init:
+            print("init_fixture")
+            self.init_fixture()
+        return False

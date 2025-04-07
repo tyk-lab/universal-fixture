@@ -5,6 +5,8 @@
 """
 
 import webbrowser
+import subprocess
+
 from PyQt6.QtWidgets import (
     QPushButton,
     QVBoxLayout,
@@ -17,6 +19,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QStandardItemModel, QStandardItem
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 
+from core.model.fixture_info import FixtureInfo
 from core.utils.opt_log import GlobalLogger
 from core.utils.test_result_log import Log
 from core.ui.timer_dialog import TimerDialog
@@ -29,7 +32,6 @@ from core.ui.table import CustomTableView
 from core.model.klipperpy import KlipperService
 from core.model.printer_cfg import PrinterConfig
 from core.utils.parse_klipper_cfg_file import check_config_field
-import subprocess
 
 
 class TestRun(QWidget):
@@ -46,7 +48,11 @@ class TestRun(QWidget):
         # 创建测试必须的对象
         self.klipper = KlipperService()
         self.config = PrinterConfig()
-        self.dev_test = DevTest(self.klipper)
+        self.port_path = port_path
+        self.fixture = FixtureInfo(
+            self.port_path, GlobalComm.setting_json["fixture_serial"]
+        )
+        self.dev_test = DevTest(self.klipper, self.fixture)
         self.dev_test.set_update_callback(
             self.make_line_data, self.delete_and_insert_line
         )
@@ -57,7 +63,6 @@ class TestRun(QWidget):
         self.last_result = ""
         self.cfg_path = cfg_path
         self.power_path = power_path
-        self.port_path = port_path
         self.loading_git = LoadingPanel(self)
 
         # 测试模式映射， 跟setting标识一致
@@ -125,7 +130,7 @@ class TestRun(QWidget):
 
         # 判断设备是否存在, 不存在弹窗警告
         self.result = self.config.get_serial_paths()
-        if self.result is False:
+        if self.result is False or self.fixture.is_connect(True) is False:
             self.klipper_connect_result(
                 GlobalComm.get_langdic_val("error_tip", "err_comm_no_device")
             )
@@ -134,14 +139,13 @@ class TestRun(QWidget):
             )
             return False
 
-        # 避免重复写文件
+        # 更新配置文件信息
         if self.last_result != self.result:
-            print("update cfg file")
+            GlobalLogger.debug_print("update cfg file")
             self.line_edit.setText(", ".join(self.result))
             config_text = self.config.generate_config(self.result, file_path)
             if is_composite_type:
                 self.config.cp_cfg_printer_dir(file_path)
-
             self.config.write_config_to_file(config_text)
 
         self.klipper.reset_printer()
@@ -183,7 +187,7 @@ class TestRun(QWidget):
     def fixture_test(self):
         self.reset_model_ui()
         GlobalLogger.divider_head_log("fixture_test")
-
+        self.fixture.init_fixture()
         if self.update_cfg(True, self.cfg_path):
             self.loading_git.init_loading_QFrame()
             self.loading_git.run_git()
@@ -197,7 +201,7 @@ class TestRun(QWidget):
             self.dev_test.test_adxl345(self.time_dialog, self.start_timer_dialog_signal)
 
         # self.dev_test.test_rgbw()
-        self.dev_test.test_fan()
+        # self.dev_test.test_fan()
         self.dev_test.test_btn()
         # self.dev_test.test_comm_th()
         #  self.dev_test.test_extruder_th()
@@ -290,7 +294,7 @@ class TestRun(QWidget):
         serial_id = "\n".join(self.last_result)
         GlobalLogger.log(serial_id)
         GlobalLogger.log("connect Successful")
-        print(serial_id)
+        GlobalLogger.debug_print("connect Successful", serial_id)
         log = web_state["state_message"] + "    " + "\r\n"
         raw_data = [
             GlobalComm.get_langdic_val("view", "test_result_ok"),
@@ -330,7 +334,7 @@ class TestRun(QWidget):
                 items.append(item)
             self.model.insertRow(row, items)
         else:
-            print("行号超出范围")
+            GlobalLogger.debug_print("行号超出范围")
 
     ##################### event #######################
     def on_init_test_map(self):

@@ -5,7 +5,6 @@
 """
 
 import json
-import os
 from core.utils.msg import CustomDialog
 from PyQt6.QtGui import QColor
 
@@ -18,8 +17,6 @@ class GlobalComm:
     setting_json = dict()
 
     language = ""
-
-    test_enable = True
 
     err_color = QColor(255, 182, 193)  # light red
     ok_color = QColor(144, 238, 144)  # light green

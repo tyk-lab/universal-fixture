@@ -11,6 +11,7 @@ from datetime import datetime
 class GlobalLogger:
     # 类变量，用于存储日志文件路径
     log_file_path = None
+    DEBUG_MODE = True
 
     @classmethod
     def initialize(cls):
@@ -37,5 +38,13 @@ class GlobalLogger:
         # print(f"Logged: {message}")
 
     @classmethod
+    def debug_print(*args, **kwargs):
+        """
+        The built-in print is called when DEBUG_MODE is True, otherwise no action is performed.
+        """
+        if GlobalLogger.DEBUG_MODE:
+            print(*args, **kwargs)
+
+    @classmethod
     def divider_head_log(cls, title):
-        cls.log(f"\r\n########################### {title}############################")
+        cls.log(f"\r\n########################### {title} ############################")

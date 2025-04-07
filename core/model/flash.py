@@ -46,7 +46,7 @@ class Flash:
         for line in result.stdout.splitlines():
             if dev in line:
                 self.parts = line.split()
-                # todo, 不一定是第五个
+                # The fifth column is the usb id column
                 usb_id = self.parts[5]
                 return usb_id
         return None
