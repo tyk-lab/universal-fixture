@@ -12,6 +12,12 @@ import struct
 
 from enum import IntEnum
 
+from core.utils.exception.ex_test import (
+    TestFrameBeginException,
+    TestFrameLengthException,
+)
+from core.utils.msg import CustomDialog
+
 
 # Defining the frame type
 class FrameType(IntEnum):
@@ -28,7 +34,6 @@ def build_key_json(port, dev_name, value=None):
     return {"port": port, "name": dev_name}
 
 
-# todo, 补充log和异常处理
 def receive_and_parse_frame(ser):
     # 帧头定义
     FRAME_START = 0x5F
@@ -49,21 +54,19 @@ def receive_and_parse_frame(ser):
                 data = ser.read(data_size)
                 # print(data)
                 if len(data) == data_size:
-                    try:
-                        # 尝试解析为JSON
-                        json_data = json.loads(data.decode("utf-8"))
-                        print("收到JSON数据：", json_data)
-                        return json_data
-                    except json.JSONDecodeError:
-                        print("数据不是有效的JSON格式")
+                    # 尝试解析为JSON
+                    json_data = json.loads(data.decode("utf-8"))
+                    print("收到JSON数据：", json_data)
+                    return json_data
                 else:
-                    print("数据长度不匹配")
+                    raise TestFrameLengthException()
             else:
-                print("无效的帧起始字节")
+                raise TestFrameBeginException()
     except Exception as e:
-        print("数据接收解析错误：", e)
-
-    return None
+        print("数据帧接收解析错误：", e)
+        dialog = CustomDialog()
+        dialog.show_warning(str(e))
+        return None
 
 
 def send_json_frame(ser, infoId, payload):

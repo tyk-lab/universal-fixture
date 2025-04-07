@@ -10,6 +10,8 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QStandardItem, QColor
 import traceback
 
+from core.utils.exception.ex_test import TestConnectException, TestFailureException
+
 
 class DevTest:
     def __init__(self, klipper):
@@ -73,7 +75,7 @@ class DevTest:
         self.add_row_callback(raw_data, color)
 
     def _raise_connect_exception(self, klipper_state, fixture_state):
-        raise Exception(
+        raise TestConnectException(
             GlobalComm.get_langdic_val("exception_tip", "excep_connect")
             + ": klipper state "
             + str(klipper_state)
@@ -102,7 +104,7 @@ class DevTest:
 
                     self.show_result(key)
                     return
-            except Exception as e:
+            except TestFailureException as e:
                 self._test_exception(e, key)
         else:
             # todo,更新治具状态

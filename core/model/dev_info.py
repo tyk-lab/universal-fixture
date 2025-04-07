@@ -4,6 +4,8 @@
 @Desc    :   Obtain product and gage information to determine compliance with requirements
 """
 
+from core.utils.exception.ex_test import TestFailureException
+
 
 class DevInfo:
     def __init__(self, klipper, dicts):
@@ -54,7 +56,7 @@ class DevInfo:
                     result_dict[key] = False
                 else:
                     result_dict[key] = True
-            raise Exception(result_dict, log_dict)
+            raise TestFailureException(result_dict, log_dict)
 
     ############################## th Equipment Related ############################
 
@@ -84,7 +86,7 @@ class DevInfo:
                 result_dict[key] = False
                 has_exception = True
         if has_exception:
-            raise Exception(result_dict, log_dict)
+            raise TestFailureException(result_dict, log_dict)
 
     ############################## fan Equipment Related ############################
 
@@ -130,7 +132,7 @@ class DevInfo:
                 has_exception = True
 
         if has_exception:
-            raise Exception(result_dict, log_dict)
+            raise TestFailureException(result_dict, log_dict)
 
     ############################## heat Equipment Related ############################
 
@@ -198,7 +200,7 @@ class DevInfo:
             # print("\r\n")
 
         if has_exception:
-            raise Exception(result_dict, log_dict)
+            raise TestFailureException(result_dict, log_dict)
 
     ############################## adxl345 Equipment Related ############################
 
@@ -219,7 +221,7 @@ class DevInfo:
             # 结果，标准偏差， 差异值, 当前的标准值
             return (test_result, inaccuracies, differences, cur)
 
-        raise Exception()
+        raise TestFailureException()
 
     # todo, 测试adxl345使用
     # def check_adxl345_state(self, inaccuracies=30):
@@ -255,7 +257,7 @@ class DevInfo:
                 has_exception = True
 
         if has_exception:
-            raise Exception(result_dict, log_dict)
+            raise TestFailureException(result_dict, log_dict)
 
     def run_heats(self, enalbe):
         self.klipper.run_test_gcode("_TEST_HEATS RUN=" + enalbe)
@@ -276,4 +278,4 @@ class DevInfo:
                 has_exception = True
 
         if has_exception:
-            raise Exception(result_dict, log_dict)
+            raise TestFailureException(result_dict, log_dict)
