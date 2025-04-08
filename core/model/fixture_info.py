@@ -39,22 +39,41 @@ class FixtureInfo:
             self.dev_frame_dict[dev_module] = frame_info
             send_json_frame(self.serial_dev, FrameType.Cfg, frame_info)
 
-    def sync_dev(self, frame_type):
-        self.send_command_and_format_result(frame_type, "syncSQ")
+        #!todo 补充内置的模块初始化
+        self.dev_frame_dict["syncSQ"] = {"port": "0", "name": "sync"}
 
-    # 执行这个函数，说明port文件已经存在且正确，而串口若不存在则可在界面和log中查看
-    def init_fixture(self):
+    def sync_dev(self, frame_type):
+        return self.send_command_and_format_result(frame_type, "syncSQ")
+
+    def init_fixture(self, re_init=False):
+        from core.utils.common import GlobalComm
+        from core.utils.exception.ex_test import TestConnectException
+
+        self.realease_resouce(re_init)
 
         if self.serial_dev == None:
             self.serial_dev = serial.Serial(self.serial_port, 9600, timeout=1)
 
-        if self.serial_dev.is_open is False:
-            self.serial_dev.open()
+        print("re_init", re_init)
+        if re_init:
+            if self.sync_dev(FrameType.Sync) == None:
+                raise TestConnectException(
+                    self.init_fixture.__name__
+                    + " : "
+                    + GlobalComm.get_langdic_val("exception_tip", "excep_connect")
+                )
 
         if self.dev_frame_dict == {}:
             with open(self.port_path, "r", encoding="utf-8") as f:
                 self.port_json = json.load(f)
                 self._init_port_info()
+
+    def realease_resouce(self, re_init):
+        if re_init:
+            print("realease_resouce")
+            self.serial_dev.close()
+            self.dev_frame_dict = {}
+            self.serial_dev = None
 
     def _wait_fixture_reply(self):
         wait_time_cnt = 0
@@ -63,7 +82,7 @@ class FixtureInfo:
             if self.serial_dev.in_waiting:
                 return receive_and_parse_frame(self.serial_dev)
 
-            if wait_time_cnt > 3000000:
+            if wait_time_cnt > 100000:
                 return None
 
     def _format_reply_info(self, reply):
@@ -87,15 +106,21 @@ class FixtureInfo:
         """
         只适用用设备类型带“V”的key
         """
-
-        from core.utils.opt_log import GlobalLogger
+        from core.utils.common import GlobalComm
+        from core.utils.exception.ex_test import TestConnectException
 
         # GlobalLogger.debug_print("dev_frame_dict:\r\n", self.dev_frame_dict)
-
-        for btn in self.dev_frame_dict[dev_type].get(dev_type, []):
-            btn["value"] = value
-        send_json_frame(self.serial_dev, frame_type, self.dev_frame_dict[dev_type])
-        # time.sleep(0.1)
+        try:
+            for btn in self.dev_frame_dict[dev_type].get(dev_type, []):
+                btn["value"] = value
+            send_json_frame(self.serial_dev, frame_type, self.dev_frame_dict[dev_type])
+            # time.sleep(0.1)
+        except serial.serialutil.SerialException as e:
+            raise TestConnectException(
+                self.send_command.__name__
+                + " : "
+                + GlobalComm.get_langdic_val("exception_tip", "excep_connect_send")
+            )
 
     def send_command_and_format_result(self, frame_type, dev_type):
         """
@@ -103,17 +128,30 @@ class FixtureInfo:
         frame_type: class FrameType(IntEnum)相关数据
         dev_type: btnSV，fanSQ，协议中的设备类（在port的json文件中的key上）
         """
-        send_json_frame(self.serial_dev, frame_type, self.dev_frame_dict[dev_type])
-        reply = self._wait_fixture_reply()
-        if reply != None:
-            fixture_dict = self._format_reply_info(reply)
-            return fixture_dict
-        return None
+
+        from core.utils.common import GlobalComm
+        from core.utils.exception.ex_test import TestConnectException
+
+        try:
+            send_json_frame(self.serial_dev, frame_type, self.dev_frame_dict[dev_type])
+            reply = self._wait_fixture_reply()
+            if reply != None:
+                fixture_dict = self._format_reply_info(reply)
+                return fixture_dict
+            return None
+        except serial.serialutil.SerialException as e:
+            raise TestConnectException(
+                self._format_reply_info.__name__
+                + " : "
+                + GlobalComm.get_langdic_val("exception_tip", "excep_connect_send")
+            )
 
     def is_connect(self, exec_init=False):
-        if os.path.exists(self.serial_port) and self.serial_dev.is_open:
+        is_fixture_online = self.sync_dev(FrameType.Sync)
+
+        if os.path.exists(self.serial_port) and is_fixture_online != None:
             return True
         elif exec_init:
-            print("init_fixture")
-            self.init_fixture()
+            print("is_connect exec_init")
+            self.init_fixture(exec_init)
         return False

@@ -3,8 +3,9 @@
 class TestResultException(Exception):
     """基础测试结果异常，所有测试相关异常都继承自该类"""
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, message="测试失败", *args, **kwargs):
+        self.message = message
+        super().__init__(message, *args, **kwargs)
 
 
 # 定义测试失败异常

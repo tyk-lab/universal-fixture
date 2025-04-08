@@ -46,7 +46,8 @@
             "err_lsusb": "错误：执行lsusb失败"
         },
         "exception_tip": {
-            "excep_connect": "异常：设备连接断开"
+            "excep_connect": "异常：设备连接断开",
+            "excep_connect_send": "异常：连接异常，无法收发数据"
         }
     },
     "en": {}

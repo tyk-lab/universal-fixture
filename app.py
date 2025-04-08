@@ -228,7 +228,12 @@ class MainWindow(QMainWindow):
 
             # 获取治具端口文件
             self.port_path = os.path.join(directory, port_file[0])
-            print("port_path:", self.cfg_file_path)
+            print("port_path:", self.port_path)
+            GlobalLogger.log("port file: " + f"{self.port_path}")
+            self.message_box.append(
+                GlobalComm.get_langdic_val("view", "select_cfg_file")
+                + f"{self.port_path}"
+            )
 
             # 获取治具测试文件
             self.cfg_file_path = os.path.join(directory, cfg_file[0])

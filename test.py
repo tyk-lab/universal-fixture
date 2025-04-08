@@ -155,7 +155,7 @@ def main():
         ser = serial.Serial(port, baud_rate, timeout=timeout)
         if ser.is_open:
             print(f"成功打开串口：{port}，波特率：{baud_rate}")
-            init_dev(ser)
+            # init_dev(ser)
 
             while True:
                 # 检查是否有数据可读
@@ -163,9 +163,9 @@ def main():
                     receive_and_parse_frame(ser)
 
                 value = 1 if value == 0 else 0
-                send_json_frame(ser, FrameType.Opt, build_btn_JsonField(value))
+                # send_json_frame(ser, FrameType.Opt, build_btn_JsonField(value))
                 # send_json_frame(ser, FrameType.Request, build_th_JsonField())
-                # send_json_frame(ser, FrameType.Sync, build_sync_JsonField())
+                send_json_frame(ser, FrameType.Sync, build_sync_JsonField())
                 # time.sleep(0.3)
 
                 # # send_json_frame(ser, FrameType.Request, build_vol_JsonField())

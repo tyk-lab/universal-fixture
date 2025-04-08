@@ -95,7 +95,7 @@ class DevTest:
         from core.utils.opt_log import GlobalLogger
 
         klipper_state = self.klipper.is_connect(False)
-        fixture_state = self.fixtrue.is_connect()
+        fixture_state = self.fixtrue.is_connect(True)
         key = "gcode_button "
 
         if klipper_state and fixture_state:
@@ -116,7 +116,7 @@ class DevTest:
                 print("发生异常: %s\n%s", str(e), traceback.format_exc())
         else:
             # todo,更新治具状态
-            self._raise_connect_exception(klipper_state, False)
+            self._raise_connect_exception(klipper_state, fixture_state)
 
     def test_comm_th(self):
         # todo,命令开始前，判断下两边的状态

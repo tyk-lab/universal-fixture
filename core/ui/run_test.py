@@ -18,6 +18,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtGui import QStandardItemModel, QStandardItem
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal
+import serial
 
 from core.model.fixture_info import FixtureInfo
 from core.utils.opt_log import GlobalLogger
@@ -130,7 +131,7 @@ class TestRun(QWidget):
 
         # 判断设备是否存在, 不存在弹窗警告
         self.result = self.config.get_serial_paths()
-        if self.result is False or self.fixture.is_connect(True) is False:
+        if self.result is False:
             self.klipper_connect_result(
                 GlobalComm.get_langdic_val("error_tip", "err_comm_no_device")
             )
@@ -185,14 +186,30 @@ class TestRun(QWidget):
 
     ##################### Function function #######################
     def fixture_test(self):
+        from core.utils.exception.ex_test import TestConnectException
+
         self.reset_model_ui()
         GlobalLogger.divider_head_log("fixture_test")
-        self.fixture.init_fixture()
-        if self.update_cfg(True, self.cfg_path):
-            self.loading_git.init_loading_QFrame()
-            self.loading_git.run_git()
-            self.timer.start()
-            self.creat_test_thread(self.fixture_test_result)
+
+        try:
+            self.fixture.init_fixture()
+            if self.update_cfg(True, self.cfg_path):
+                self.loading_git.init_loading_QFrame()
+                self.loading_git.run_git()
+                self.timer.start()
+                self.creat_test_thread(self.fixture_test_result)
+        except serial.serialutil.SerialException as e:
+            err = str(e)
+            dialog = CustomDialog()
+            print("fixture_test serial异常：", err)
+            GlobalLogger.log(err)
+            dialog.show_warning("串口无法正常打开")
+        except TestConnectException as e:
+            dialog = CustomDialog()
+            print("fixture_test异常：", e.message)
+            GlobalLogger.log(e.message)
+            GlobalLogger.log(e.message)
+            dialog.show_warning("治具通信异常")
 
     def fixture_test_result(self):
         self.dev_test.init_model()
