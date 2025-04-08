@@ -1,40 +1,60 @@
-class FileException(Exception):
-    """文件异常基类，所有文件相关异常都继承自此类"""
+"""
+@File    :   ex_file.py
+@Time    :   2025/04/08
+@Desc    :   Define classes for file-related exceptions
+"""
 
-    pass
+from core.utils.common import GlobalComm
+
+
+class FileException(Exception):
+    """File exception base class, all file-related exceptions inherit from this class."""
+
+    def __init__(
+        self,
+        message=GlobalComm.get_langdic_val("excep_test", "file_result"),
+        filepath="",
+        *args,
+        **kwargs,
+    ):
+        self.filepath = filepath
+        self.message = f"{message}: {filepath}"
+        super().__init__(message, *args, **kwargs)
 
 
 class FileReadError(FileException):
-    """读取文件时发生异常"""
+    """An exception occurred while reading a file"""
 
-    def __init__(self, filepath, message="读取文件时出错"):
-        self.filepath = filepath
-        self.message = f"{message}: {filepath}"
-        super().__init__(self.message)
+    def __init__(
+        self, filepath, message=GlobalComm.get_langdic_val("excep_test", "file_read")
+    ):
+        super().__init__(message, filepath)
 
 
 class FileWriteError(FileException):
-    """写入文件时发生异常"""
+    """Exception occurred while writing a file"""
 
-    def __init__(self, filepath, message="写入文件时出错"):
-        self.filepath = filepath
-        self.message = f"{message}: {filepath}"
-        super().__init__(self.message)
+    def __init__(
+        self, filepath, message=GlobalComm.get_langdic_val("excep_test", "file_write")
+    ):
+        super().__init__(message, filepath)
 
 
 class FileFormatError(FileException):
-    """文件格式异常，例如解析时格式错误"""
+    """File format anomalies, e.g. parsing in the wrong format"""
 
-    def __init__(self, filepath, message="文件格式错误"):
-        self.filepath = filepath
-        self.message = f"{message}: {filepath}"
-        super().__init__(self.message)
+    def __init__(
+        self, filepath, message=GlobalComm.get_langdic_val("excep_test", "file_format")
+    ):
+        super().__init__(message, filepath)
 
 
 class FileNotFoundCustomError(FileException):
-    """自定义文件未找到异常（注意：内建的 FileNotFoundError 也适用）"""
+    """Custom File Not Found Exception (note: the built-in FileNotFoundError also applies)"""
 
-    def __init__(self, filepath, message="文件未找到"):
-        self.filepath = filepath
-        self.message = f"{message}: {filepath}"
-        super().__init__(self.message)
+    def __init__(
+        self,
+        filepath,
+        message=GlobalComm.get_langdic_val("excep_test", "file_not_found"),
+    ):
+        super().__init__(message, filepath)

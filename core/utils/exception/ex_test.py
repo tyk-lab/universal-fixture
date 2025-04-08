@@ -1,49 +1,72 @@
-# test_exceptions.py
-# 定义基础测试结果异常
-class TestResultException(Exception):
-    """基础测试结果异常，所有测试相关异常都继承自该类"""
+"""
+@File    :   ex_test.py
+@Time    :   2025/04/08
+@Desc    :   Define classes for test-related exceptions
+"""
 
-    def __init__(self, message="测试失败", *args, **kwargs):
+from core.utils.common import GlobalComm
+
+
+class TestResultException(Exception):
+    """Base test result exceptions, from which all test-related exceptions are inherited"""
+
+    def __init__(
+        self,
+        message=GlobalComm.get_langdic_val("excep_test", "test_result"),
+        *args,
+        **kwargs
+    ):
         self.message = message
         super().__init__(message, *args, **kwargs)
 
 
-# 定义测试失败异常
 class TestFailureException(TestResultException):
-    """测试失败异常，用于表示测试未通过"""
+    """Test Failure Exception, used to indicate that a test has not passed"""
 
-    pass
+    def __init__(
+        self, message=GlobalComm.get_langdic_val("excep_test", "test_failure")
+    ):
+        super().__init__(message)
 
 
-# 定义测试超时异常
 class TestTimeoutException(TestResultException):
-    """测试超时异常，用于表示测试运行超过预定时间"""
+    """Test timeout exception, used to indicate that a test has run longer than the scheduled time"""
 
-    pass
+    def __init__(
+        self, message=GlobalComm.get_langdic_val("excep_test", "test_timeout")
+    ):
+        super().__init__(message)
 
 
-# 定义测试失联异常
 class TestConnectException(TestResultException):
-    """测试失败异常，用于表示测试未通过"""
+    """Connection exception in test, used to indicate that the test did not pass"""
 
-    pass
+    def __init__(
+        self, message=GlobalComm.get_langdic_val("excep_test", "test_connect")
+    ):
+        super().__init__(message)
 
 
-# 定义测试通信数据帧异常
 class TestFrameException(TestResultException):
-    """测试失败异常，用于表示测试未通过"""
+    """Test data frame exception, used to indicate that the test has not passed"""
 
-    pass
+    def __init__(self, message=GlobalComm.get_langdic_val("excep_test", "test_frame")):
+        super().__init__(message)
 
 
-# 定义测试通信数据帧异常
 class TestFrameLengthException(TestFrameException):
-    """测试失败异常，用于表示测试未通过"""
+    """Test data frame length exception, used to indicate that the test has not passed"""
 
-    pass
+    def __init__(
+        self, message=GlobalComm.get_langdic_val("excep_test", "test_frame_length")
+    ):
+        super().__init__(message)
 
 
 class TestFrameBeginException(TestFrameException):
-    """测试失败异常，用于表示测试未通过"""
+    """Test data frame start bit exception, used to indicate that the test has not passed"""
 
-    pass
+    def __init__(
+        self, message=GlobalComm.get_langdic_val("excep_test", "test_frame_begin")
+    ):
+        super().__init__(message)

@@ -48,6 +48,22 @@
         "exception_tip": {
             "excep_connect": "异常：设备连接断开",
             "excep_connect_send": "异常：连接异常，无法收发数据"
+        },
+        "excep_test": {
+            "test_result": "测试异常",
+            "test_failure": "测试失败异常",
+            "test_timeout": "测试超时异常",
+            "test_connect": "测试中连接异常",
+            "test_frame": "测试数据帧格式异常",
+            "test_frame_length": "测试数据帧长度异常",
+            "test_frame_begin": "测试数据帧起始位异常"
+        },
+        "excep_file": {
+            "file_result": "文件异常",
+            "file_read": "读取文件时出错",
+            "file_write": "写入文件时出错",
+            "file_format": "文件格式错误",
+            "file_not_found": "文件未找到"
         }
     },
     "en": {}
