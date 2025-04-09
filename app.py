@@ -27,22 +27,20 @@ from PyQt6.QtCore import Qt
 from core.utils.opt_log import GlobalLogger
 from core.ui.run_test import TestRun
 from core.model.usb_flash import UsbFlash
-from core.utils.msg import CustomDialog
+from core.utils.custom_dialog import CustomDialog
 from core.utils.common import GlobalComm
-from core.utils.parse_klipper_cfg_file import parse_cfg_flash_info
+from core.utils.parse_cfg_file import parse_cfg_flash_info
 
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.cfg_file_path = ""
-
         self.loading_cfg()
         self.load_current_languag()
 
         self.setWindowTitle(GlobalComm.get_langdic_val("view", "main_title"))
-        self.resize(800, 800)
+        self.resize(800, 800)  # todo, 全屏或修改适配屏幕
 
         self.menu_init()
         self.central_init()
@@ -51,18 +49,22 @@ class MainWindow(QMainWindow):
     def menu_init(self):
         menu_bar = self.menuBar()
 
-        # 文件菜单页 #
+        ###########################
+        # File menu page
+        #############################
         file_menu = menu_bar.addMenu(GlobalComm.get_langdic_val("view", "file_menu"))
 
-        # 退出应用子页
+        # Exit the application sub-page
         action = QAction(GlobalComm.get_langdic_val("view", "file_menu_exit"), self)
         action.triggered.connect(MainWindow.on_exit_app)
         file_menu.addAction(action)
 
-        # 设置页 #
+        ###########################
+        # settings page
+        #############################
         set_menu = menu_bar.addMenu(GlobalComm.get_langdic_val("view", "set_menu"))
 
-        # 语言转换子页
+        # Language Conversion Subpage
         language_menu = set_menu.addMenu(
             GlobalComm.get_langdic_val("view", "set_menu_language")
         )
@@ -84,7 +86,7 @@ class MainWindow(QMainWindow):
         self.chinese_action.triggered.connect(self.on_set_language_zh)
         language_menu.addAction(self.chinese_action)
 
-        # 模式菜单子页
+        # Mode menu sub-page
         mode_menu = set_menu.addMenu(GlobalComm.get_langdic_val("view", "menu_mode"))
         self.action_fixture = QAction(
             GlobalComm.get_langdic_val("view", "menu_mode_1"), self, checkable=True
@@ -99,11 +101,11 @@ class MainWindow(QMainWindow):
             GlobalComm.get_langdic_val("view", "menu_mode_4"), self, checkable=True
         )
 
-        # 连接信号到槽函数
-        self.action_fixture.triggered.connect(self.on_action_toggled)
-        self.action_comm.triggered.connect(self.on_action_toggled)
-        self.action_sigle.triggered.connect(self.on_action_toggled)
-        self.action_power.triggered.connect(self.on_action_toggled)
+        # Connecting Signals to Slot Functions
+        self.action_fixture.triggered.connect(self.on_mode_toggled)
+        self.action_comm.triggered.connect(self.on_mode_toggled)
+        self.action_sigle.triggered.connect(self.on_mode_toggled)
+        self.action_power.triggered.connect(self.on_mode_toggled)
 
         mode_list = GlobalComm.setting_json["test_mode"]
         self.action_list = {
@@ -114,23 +116,25 @@ class MainWindow(QMainWindow):
         }
         self.init_test_mode()
 
-        # 将菜单项添加到模式菜单
+        # Adding menu items to the modal menu
         mode_menu.addAction(self.action_fixture)
         mode_menu.addAction(self.action_comm)
         mode_menu.addAction(self.action_sigle)
         mode_menu.addAction(self.action_power)
 
-        # 关于页 #
+        ###########################
+        #  About Page
+        #############################
         about_action = QAction(GlobalComm.get_langdic_val("view", "about"), self)
         about_action.triggered.connect(self.on_show_about)
         menu_bar.addAction(about_action)
 
     def central_init(self):
-        # 创建主部件和布局
+        # Creating Master Parts and Layouts
         main_widget = QWidget(self)
         main_layout = QVBoxLayout(main_widget)
 
-        # 第一行：选择文件按钮和不可编辑的文本框
+        # First line: select file button and non-editable text box
         file_layout = QHBoxLayout()
         open_button = QPushButton(GlobalComm.get_langdic_val("view", "btn_open"))
         self.file_edit = QLineEdit()
@@ -140,7 +144,7 @@ class MainWindow(QMainWindow):
 
         open_button.clicked.connect(self.on_open_file)
 
-        # 第二行：烧录按钮和测试按钮
+        # Second row: Burn button and Test button
         action_layout = QHBoxLayout()
         burn_button = QPushButton(GlobalComm.get_langdic_val("view", "btn_burn"))
         test_button = QPushButton(GlobalComm.get_langdic_val("view", "btn_test"))
@@ -150,21 +154,23 @@ class MainWindow(QMainWindow):
         burn_button.clicked.connect(self.on_upload_firmware)
         test_button.clicked.connect(self.on_test)
 
-        # 第三行及以下：消息框
+        # Third row and following: message box
         self.message_box = QTextEdit()
         self.message_box.setReadOnly(True)
 
-        # 将布局添加到主布局中
+        # Adding a layout to the main layout
         main_layout.addLayout(file_layout)
         main_layout.addLayout(action_layout)
         main_layout.addWidget(self.message_box)
 
-        # 设置主部件
+        # Setting up the main part
         self.setCentralWidget(main_widget)
 
-        # 初始化其他要素
+        ### Initialising other elements ###
         self.dialog = CustomDialog(main_widget)
         self.usb_flash = UsbFlash(self.message_box, self.dialog, main_widget)
+        self.cfg_file_path = ""
+        self.new_window = None
 
     ##################### Function function #######################
     def update_language_ui(self):
@@ -194,34 +200,43 @@ class MainWindow(QMainWindow):
             elif lang and lang.startswith("en"):
                 self.language = "en"
             else:
-                self.language = "en"  # 若是其他语言默认中文
+                self.language = "en"  # Default Chinese for other languages
 
             GlobalComm.set_cur_language(self.language)
         else:
             self.language = GlobalComm.setting_json["language"]
 
-    def get_flash_info(self, file_name):
+    def load_required_files(self, target_file_name):
+        """Get the necessary file information according to the path of the open file, including configuration file,
+            port file, power file, etc.
+
+        Args:
+            target_file_name (_type_): Selected target file
+
+        Raises:
+            FileNotFoundCustomError: Relevant documents do not exist
+        """
         from core.utils.exception.ex_file import FileNotFoundCustomError
 
-        # 获取文件所在目录
-        directory = os.path.dirname(file_name)
+        # Get the directory where the target file is located
+        directory = os.path.dirname(target_file_name)
 
         self.power_cfg_path = None
         self.mcu_type = None
 
         try:
-            # 查找目录下的cfg文件
+            # Find the cfg file in the directory
             cfg_files = [f for f in os.listdir(directory) if f.endswith(".cfg")]
             cfg_file = [f for f in cfg_files if "test" in f]
             if cfg_files == [] or cfg_file == []:
                 raise FileNotFoundCustomError(directory)
 
-            # 查找目录下的port文件
+            # Look for the port file in the directory
             port_file = [f for f in os.listdir(directory) if f.endswith(".json")]
             if port_file == []:
                 raise FileNotFoundCustomError(directory)
 
-            # 获取治具端口文件
+            # Get Fixture Port File
             self.port_path = os.path.join(directory, port_file[0])
             print("port_path:", self.port_path)
             GlobalLogger.log("port file: " + f"{self.port_path}")
@@ -230,23 +245,23 @@ class MainWindow(QMainWindow):
                 + f"{self.port_path}"
             )
 
-            # 获取治具测试文件
+            # Obtaining Fixture Test Documents
             self.cfg_file_path = os.path.join(directory, cfg_file[0])
             print("cfg_file_path:", self.cfg_file_path)
-
             GlobalLogger.log("cfg file: " + f"{self.cfg_file_path}")
-
             self.message_box.append(
                 GlobalComm.get_langdic_val("view", "select_cfg_file")
                 + f"{self.cfg_file_path}"
             )
 
-            # 获取功率测试文件
+            # Getting the Power Test File
+            self.power_cfg_path = ""
             power_test_file = GlobalComm.setting_json["power_test_file"]
             if power_test_file in cfg_files:
                 self.power_cfg_path = os.path.join(directory, power_test_file)
             print("power_cfg_path:", self.power_cfg_path)
 
+            # Extract the necessary burn-in information from the configuration file
             board, self.mcu_type, file_suffix = parse_cfg_flash_info(self.cfg_file_path)
             self.message_box.append(
                 f"Board: {board}\t"
@@ -268,28 +283,11 @@ class MainWindow(QMainWindow):
             self.message_box.append(e.message)
             self.dialog.show_warning(e.message)
 
-    def open_new_window(self):
-        if self.cfg_file_path != "":
-            self.new_window = TestRun(
-                self.cfg_file_path, self.power_cfg_path, self.port_path
-            )
-            self.new_window.show()
-            return
-
-        GlobalLogger.log(
-            "\r\n" + GlobalComm.get_langdic_val("error_tip", "err_not_select_cfg")
-        )
-
-        self.dialog.show_warning(
-            GlobalComm.get_langdic_val("error_tip", "err_not_select_cfg")
-        )
-
-    ##################### event #######################
+    ##################### event(The function name of the event with on_) #######################
     def on_open_file(self):
         default_directory = "firmware"
-        self.message_box.clear()
 
-        file_name, _ = QFileDialog.getOpenFileName(
+        target_file, _ = QFileDialog.getOpenFileName(
             self,
             GlobalComm.get_langdic_val("view", "open_file"),
             default_directory,
@@ -298,13 +296,18 @@ class MainWindow(QMainWindow):
 
         GlobalLogger.log("\r\nselect file")
 
-        if file_name:
-            self.file_edit.setText(file_name)
-            GlobalLogger.log("file: " + f"{file_name}")
+        if target_file:
+            self.message_box.clear()
+
+            # Selecting New Firmware closes the test screen
+            if self.new_window != None:
+                self.new_window.close()
+            self.file_edit.setText(target_file)
+            GlobalLogger.log("firmware file: " + f"{target_file}")
             self.message_box.append(
-                GlobalComm.get_langdic_val("view", "select_file") + f"{file_name}"
+                GlobalComm.get_langdic_val("view", "select_file") + f"{target_file  }"
             )
-            self.get_flash_info(file_name)
+            self.load_required_files(target_file)
 
     def on_upload_firmware(self):
         if self.file_edit.text() and self.mcu_type:
@@ -315,11 +318,27 @@ class MainWindow(QMainWindow):
             GlobalLogger.log("\r\n" + err_tip)
             self.dialog.show_warning(err_tip)
 
-    # todo
     def on_test(self):
-        self.open_new_window()
+        if self.cfg_file_path != "":
+            # Restricted to open only once
+            if self.new_window != None and self.new_window.isVisible():
+                return
 
-    def on_action_toggled(self, checked):
+            self.new_window = TestRun(
+                self.cfg_file_path, self.power_cfg_path, self.port_path
+            )
+            self.new_window.show()
+            return
+
+        # Prompts that no profile is selected
+        GlobalLogger.log(
+            "\r\n" + GlobalComm.get_langdic_val("error_tip", "err_not_select_cfg")
+        )
+        self.dialog.show_warning(
+            GlobalComm.get_langdic_val("error_tip", "err_not_select_cfg")
+        )
+
+    def on_mode_toggled(self, checked):
         action = self.sender()
         for key, value in self.action_list.items():
             if action is value:

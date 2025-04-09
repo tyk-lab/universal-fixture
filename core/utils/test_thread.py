@@ -1,4 +1,9 @@
-import threading
+"""
+@File    :   Test_thread.py
+@Time    :   2025/04/09
+@Desc    :   Test thread related
+"""
+
 from PyQt6.QtCore import QThread, pyqtSignal, QTimer
 
 

@@ -5,7 +5,7 @@
 """
 
 import json
-from core.utils.msg import CustomDialog
+from core.utils.custom_dialog import CustomDialog
 from PyQt6.QtGui import QColor
 
 

@@ -39,29 +39,25 @@ class FixtureInfo:
             self.dev_frame_dict[dev_module] = frame_info
             send_json_frame(self.serial_dev, FrameType.Cfg, frame_info)
 
-        #!todo 补充内置的模块初始化
+        #! Supplementary built-in module initialisation
         self.dev_frame_dict["syncSQ"] = {"port": "0", "name": "sync"}
 
     def sync_dev(self, frame_type):
         return self.send_command_and_format_result(frame_type, "syncSQ")
 
     def init_fixture(self, re_init=False):
-        from core.utils.common import GlobalComm
         from core.utils.exception.ex_test import TestConnectException
+        from core.utils.opt_log import GlobalLogger
 
         self.realease_resouce(re_init)
 
         if self.serial_dev == None:
             self.serial_dev = serial.Serial(self.serial_port, 9600, timeout=1)
 
-        print("re_init", re_init)
+        GlobalLogger.debug_print("init_fixture re_init", re_init)
         if re_init:
             if self.sync_dev(FrameType.Sync) == None:
-                raise TestConnectException(
-                    self.init_fixture.__name__
-                    + " : "
-                    + GlobalComm.get_langdic_val("exception_tip", "excep_connect")
-                )
+                raise TestConnectException()
 
         if self.dev_frame_dict == {}:
             with open(self.port_path, "r", encoding="utf-8") as f:
@@ -69,6 +65,11 @@ class FixtureInfo:
                 self._init_port_info()
 
     def realease_resouce(self, re_init):
+        """If the gage breaks in the middle of the test, the current resources need to be released.
+
+        Args:
+            re_init (_type_): _description_
+        """
         if re_init:
             print("realease_resouce")
             self.serial_dev.close()
@@ -87,13 +88,13 @@ class FixtureInfo:
 
     def _format_reply_info(self, reply):
         """
-        将测试版输出格式：
+        Format the beta output:
         "Reply": [
             { "rgw0": "0.9, 0.0, 0.1"},
             { "rgw1": "0.9, 0.0, 0.1"},
             { "rgw2": "0.9, 0.0, 0.1"}
         ],
-        转为信息判断的格式：
+        Converted to an informative judgement format:
         {'rgw0': '0.9, 0.0, 0.1', 'rgw1': '0.9, 0.0, 0.1', 'rgw2': '0.9, 0.0, 0.1'}
         """
 
@@ -104,7 +105,7 @@ class FixtureInfo:
 
     def send_command(self, frame_type, dev_type, value):
         """
-        只适用用设备类型带“V”的key
+        Only applicable to keys with "V" device type.
         """
         from core.utils.common import GlobalComm
         from core.utils.exception.ex_test import TestConnectException
@@ -116,17 +117,13 @@ class FixtureInfo:
             send_json_frame(self.serial_dev, frame_type, self.dev_frame_dict[dev_type])
             # time.sleep(0.1)
         except serial.serialutil.SerialException as e:
-            raise TestConnectException(
-                self.send_command.__name__
-                + " : "
-                + GlobalComm.get_langdic_val("exception_tip", "excep_connect_send")
-            )
+            raise TestConnectException()
 
     def send_command_and_format_result(self, frame_type, dev_type):
         """
-        发送控制指令，接收相关数据
-        frame_type: class FrameType(IntEnum)相关数据
-        dev_type: btnSV，fanSQ，协议中的设备类（在port的json文件中的key上）
+        Sending control commands and receiving relevant data
+        frame_type: class FrameType(IntEnum)Related Data
+        dev_type: btnSV, fanSQ, device class in protocol (on key in port's json file)
         """
 
         from core.utils.common import GlobalComm
@@ -140,13 +137,17 @@ class FixtureInfo:
                 return fixture_dict
             return None
         except serial.serialutil.SerialException as e:
-            raise TestConnectException(
-                self._format_reply_info.__name__
-                + " : "
-                + GlobalComm.get_langdic_val("exception_tip", "excep_connect_send")
-            )
+            raise TestConnectException()
 
     def is_connect(self, exec_init=False):
+        """Check that the fixtures are connected
+
+        Args:
+            exec_init (bool, optional): Reinitialise if True. Defaults to False.
+
+        Returns:
+            _type_: _description_
+        """
         is_fixture_online = self.sync_dev(FrameType.Sync)
 
         if os.path.exists(self.serial_port) and is_fixture_online != None:

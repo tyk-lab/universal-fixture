@@ -11,10 +11,10 @@ import core.utils.common
 
 class CustomTableView(QTableView):
     def mouseDoubleClickEvent(self, event):
-        # 获取双击的索引
+        # Getting the index of a double-click
         index = self.indexAt(event.pos())
         if index.isValid():
-            # 获取双击单元格的内容
+            # Getting the contents of a double-clicked cell
             cell_content = index.data()
             dialog = core.utils.common.CustomDialog()
             dialog.show_info(cell_content)

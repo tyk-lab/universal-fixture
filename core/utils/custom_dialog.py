@@ -1,7 +1,7 @@
 """
 @File    :   msg.py
 @Time    :   2025/04/03
-@Desc    :   message board
+@Desc    :   global message board
 """
 
 from PyQt6.QtWidgets import (
@@ -20,31 +20,31 @@ import core.utils.common
 class CustomDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("消息")  # 清空默认标题
+        self.setWindowTitle("消息")  # Clear the default title
         self.setModal(True)
 
-        # 设置主布局
+        # Setting up the main layout
         self.main_layout = QVBoxLayout(self)
 
-        # 创建一个水平布局来放置图标和文本
+        # Create a horizontal layout for placing icons and text
         self.h_layout = QHBoxLayout()
 
         self.icon_label = QLabel(self)
         self.text_label = QLabel(self)
 
-        # 调整对话框大小
+        # Resizing the dialogue box
         # self.setFixedSize(300, 150)
 
-        # 将图标和文本添加到水平布局中
+        # Adding icons and text to horizontal layouts
         self.h_layout.addWidget(self.icon_label)
         self.h_layout.addWidget(self.text_label)
 
-        # 将水平布局添加到主布局中
+        # Adding a horizontal layout to the main layout
         self.main_layout.addLayout(self.h_layout)
 
-        # 添加一个按钮来关闭对话框
+        # Add a button to close the dialogue box
         button = QPushButton("确定", self)
-        button.clicked.connect(self.accept)  # 关闭对话框
+        button.clicked.connect(self.accept)  # Close dialogue box
         self.main_layout.addWidget(button)
 
     def show_info(self, info):

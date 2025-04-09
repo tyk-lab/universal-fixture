@@ -43,8 +43,8 @@ class KlipperService:
         web_state = self.printer.query_status("webhooks")
         return web_state
 
-    # 检查过程中，如果是报错，自动重置
-    # reset如果是True，则判断中发生错误会固件重置
+    # The checking process is automatically reset if it is an error report
+    # reset if True, firmware reset if an error occurs during judgement
     def is_connect(self, reset=True):
         try:
             web_state = self.get_connect_info()

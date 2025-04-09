@@ -9,39 +9,39 @@ import re
 
 
 def parse_cfg_flash_info(file_path):
-    # 创建一个 ConfigParser 对象
+    # Create a ConfigParser object
     config = configparser.ConfigParser()
 
-    # 打开文件并读取内容
+    # Open the file and read the contents
     with open(file_path, "r") as file:
-        # 读取所有行
+        # Read all rows
         lines = file.readlines()
 
-    # 提取 [test_info] 部分
+    # Extract the [test_info] part
     in_test_info = False
     test_info_lines = []
     for line in lines:
-        # 去掉每行开头的 "## " 注释
+        # Remove the "## " comment at the beginning of each line
         line = re.sub(r"^##\s*", "", line).strip()
 
-        # 检查是否进入 [test_info] 部分
+        # Check if you have entered the [test_info] section
         if line.startswith("[test_info]"):
             in_test_info = True
             test_info_lines.append(line)
             continue
 
-        # 检查是否离开 [test_info] 部分
+        # Check to leave the [test_info] section
         if in_test_info and line.startswith("[") and not line.startswith("[test_info]"):
             break
 
-        # 如果在 [test_info] 部分，添加行
+        # If in the [test_info] section, add the line
         if in_test_info:
             test_info_lines.append(line)
 
-    # 将 [test_info] 部分的内容加入到 ConfigParser 中
+    # Add the contents of the [test_info] section to the ConfigParser
     config.read_string("\n".join(test_info_lines))
 
-    # 获取解析后的值
+    # Get the parsed value
     test_info = config["test_info"]
     board = test_info.get("boart")
     mcu = test_info.get("mcu")
@@ -49,7 +49,7 @@ def parse_cfg_flash_info(file_path):
 
     return board, mcu, file_suffix
 
-    # 示例调用(debug)
+    # Example call (debug)
     # board, mcu, file_suffix = parse_cfg_flash_info(
     #     "/home/test/Test/core/utils/klipper_printer.cfg"
     # )

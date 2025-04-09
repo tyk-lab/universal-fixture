@@ -1,3 +1,9 @@
+"""
+@File    :   Flash_thread.py
+@Time    :   2025/04/09
+@Desc    :   Burning Device Threads
+"""
+
 from PyQt6.QtCore import QThread, pyqtSignal, Qt
 
 

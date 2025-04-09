@@ -18,6 +18,7 @@ class Flash:
         self.file_path = file_full_name
         self.mcu_type = mcu_type.split("f")[0]
 
+    # Check the key fields to judge the burn-in results
     def check_flash_finish(self, result):
         if "Rebooting device" in result:
             return True
@@ -25,19 +26,17 @@ class Flash:
             return True
         return False
 
-    # 解析时判断
     def check_firmware_suffix(self):
-        # 定义允许的文件后缀
+        # Define allowed file suffixes
         allowed_suffixes = GlobalComm.setting_json["support_suffixes"]
-        # 获取文件后缀
+        # Get File Suffix
         file_suffix = self.file_path.split(".")[-1]
-        # 检查文件后缀是否在允许的后缀列表中
         if f".{file_suffix}" in allowed_suffixes.get(self.mcu_type, []):
             return True
         return False
 
+    # Determine if you are in boot mode based on the result of the unique usb id of the lsusb
     def check_lsusb_for_dev_boot(self):
-        # 执行 lsusb 命令并捕获输出
         result = subprocess.run(["lsusb"], capture_output=True, text=True, check=True)
         dev = self.usb_devs[self.mcu_type]
 

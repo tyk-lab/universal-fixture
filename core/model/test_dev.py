@@ -14,7 +14,7 @@ import traceback
 
 class DevTest:
     def __init__(self, klipper, fixtrue):
-        # 类型下的设备表
+        # Table of devices under type
         self.dev_dicts = {
             "gcode_button ": [],
             "fan_generic ": [],
@@ -23,7 +23,7 @@ class DevTest:
             "heater_bed": [],
             "extruder": [],
             "neopixel ": [],
-            # "adxl345": [],  # 这个直接读读不出数据
+            # "adxl345": [],  # This won't read in klipper.
         }
 
         self.klipper = klipper
@@ -38,8 +38,16 @@ class DevTest:
         self.dev_dicts = self.dev.get_dev_info()
 
     def show_result(self, key, log_dict=None, result_dict=None):
+        """Display the results of the test
+
+        Args:
+            key (_type_): Keywords for klipper
+            log_dict (_type_, optional): Not None is an exception log message. Defaults to None.
+            result_dict (_type_, optional):
+            If it is not None, the test result will be displayed abnormally. Defaults to None.
+        """
         i = 0
-        # 遍历对应的设备，更新结果
+        # Iterate over the corresponding devices and update the result
         result = True
         log = ""
         for item in self.dev_dicts[key]:
@@ -77,7 +85,6 @@ class DevTest:
     def _raise_connect_exception(self, klipper_state, fixture_state):
         from core.utils.exception.ex_test import (
             TestConnectException,
-            TestFailureException,
         )
 
         raise TestConnectException(
@@ -88,16 +95,20 @@ class DevTest:
             "fixture state " + str(fixture_state),
         )
 
-    def _test_exception(self, e, key):
+    def _test_failture_exception(self, e, key):
+        """If the test fails, go here to display an exception message
 
-        result_dict = e.args[0]  # 从异常中获取列表
+        Args:
+            e (_type_): _description_
+            key (_type_): _description_
+        """
+        result_dict = e.args[0]
         log_dict = e.args[1]
         self.show_result(key, log_dict, result_dict)
 
     def test_btn(self):
         from core.utils.opt_log import GlobalLogger
         from core.utils.exception.ex_test import (
-            TestConnectException,
             TestFailureException,
         )
 
@@ -118,9 +129,7 @@ class DevTest:
 
                     self.show_result(key)
             except TestFailureException as e:
-                self._test_exception(e, key)
-            except Exception as e:
-                print("发生异常: %s\n%s", str(e), traceback.format_exc())
+                self._test_failture_exception(e, key)
         else:
             # todo,更新治具状态
             self._raise_connect_exception(klipper_state, fixture_state)
@@ -139,7 +148,7 @@ class DevTest:
                     self.show_result(key)
                     return
             except Exception as e:
-                self._test_exception(e, key)
+                self._test_failture_exception(e, key)
         else:
             # todo,更新治具状态
             self._raise_connect_exception(klipper_state, False)
@@ -162,7 +171,7 @@ class DevTest:
                     self.show_result(other_key)
                 return
             except Exception as e:
-                self._test_exception(e, key)
+                self._test_failture_exception(e, key)
         else:
             # todo,更新治具状态
             self._raise_connect_exception(klipper_state, False)
@@ -192,7 +201,7 @@ class DevTest:
                     self.show_result(key)
                     return
             except Exception as e:
-                self._test_exception(e, key)
+                self._test_failture_exception(e, key)
         else:
             # todo,更新治具状态
             self._raise_connect_exception(klipper_state, False)
@@ -234,7 +243,7 @@ class DevTest:
                     self.show_result(key)
                     return
             except Exception as e:
-                self._test_exception(e, key)
+                self._test_failture_exception(e, key)
         else:
             # todo,更新治具状态
             self._raise_connect_exception(klipper_state, False)
@@ -273,7 +282,7 @@ class DevTest:
                     self.show_result(key)
                     return
             except Exception as e:
-                self._test_exception(e, key)
+                self._test_failture_exception(e, key)
         else:
             # todo,更新治具状态
             self._raise_connect_exception(klipper_state, False)
@@ -304,7 +313,7 @@ class DevTest:
 
                 return
             except Exception as e:
-                self._test_exception(e, key)
+                self._test_failture_exception(e, key)
         else:
             # todo,更新治具状态
             self._raise_connect_exception(klipper_state, False)

@@ -1,7 +1,7 @@
 """
 @File    :   log.py
 @Time    :   2025/04/03
-@Desc    :   Record equipment test results during testing
+@Desc    :   Record information about the results of the test
 """
 
 import os
@@ -9,11 +9,11 @@ import json
 from datetime import datetime
 
 
-class Log:
+class TestResultLog:
     def __init__(self):
-        # 初始化日志目录
+        # Initialising the log directory
         self.log_dir = os.path.join(os.getcwd(), "log")
-        # 初始化数据存储
+        # Initialising the datastore
         self.data = {}
         self.test_result = True
 
@@ -21,25 +21,25 @@ class Log:
         if col1 == "False":
             self.test_result = False
 
-        # 如果 key 不在数据字典中，则初始化为一个空列表
+        # If the key is not in the data dictionary, it is initialised to an empty list
         if str(key) not in self.data:
             self.data[str(key)] = []
 
-        # 添加一行数据到对应 key 的列表中
+        # Add a row of data to the list corresponding to the key
         self.data[str(key)].append(
             {"result": col1, "type": col2, "name": col3, "bak": col4}
         )
 
     def save_logs(self):
-        # 获取当前日期，格式为 YYYY-MM-DD
+        # Get the current date in YYYY-MM-DD format.
         current_date = datetime.now().strftime("%Y-%m-%d")
         date_dir = os.path.join(self.log_dir, current_date)
 
-        # 如果日期目录不存在，则创建
+        # If the date catalogue does not exist, create
         if not os.path.exists(date_dir):
             os.makedirs(date_dir)
 
-        # 遍历每个 key，将数据写入以 key_col1 命名的 JSON 文件
+        # Iterate over each key and write the data to a JSON file named key_col1
         for key, entries in self.data.items():
             if entries:  # 确保列表不为空
                 file_name = f"{self.test_result}_{key}.json"

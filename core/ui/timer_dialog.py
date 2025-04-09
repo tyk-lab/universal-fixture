@@ -35,7 +35,7 @@ class TimerDialog(QDialog):
         self.label = QLabel("当前值: 0,0,0", self)
 
         button = QPushButton("确定", self)
-        button.clicked.connect(self.accept)  # 关闭对话框
+        button.clicked.connect(self.accept)  # Close dialogue box
 
         layout = QVBoxLayout()
         layout.addWidget(self.label)
@@ -45,7 +45,7 @@ class TimerDialog(QDialog):
         self.setWindowTitle("数据更新弹窗")
         self.setGeometry(100, 100, 300, 100)
 
-        # 设置一个计时器来更新数据
+        # Set a timer to update the data
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.loop_check)
 

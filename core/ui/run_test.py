@@ -6,6 +6,7 @@
 
 import webbrowser
 import subprocess
+import traceback
 
 from PyQt6.QtWidgets import (
     QPushButton,
@@ -22,17 +23,17 @@ import serial
 
 from core.model.fixture_info import FixtureInfo
 from core.utils.opt_log import GlobalLogger
-from core.utils.test_result_log import Log
+from core.utils.test_result_log import TestResultLog
 from core.ui.timer_dialog import TimerDialog
 from core.utils.common import GlobalComm
-from core.utils.msg import CustomDialog
-from core.utils.Test_thread import TestThread
+from core.utils.custom_dialog import CustomDialog
+from core.utils.test_thread import TestThread
 from core.ui.loading import LoadingPanel
 from core.model.test_dev import DevTest
 from core.ui.table import CustomTableView
 from core.model.klipperpy import KlipperService
 from core.model.printer_cfg import PrinterConfig
-from core.utils.parse_klipper_cfg_file import check_config_field
+from core.utils.parse_cfg_file import check_config_field
 
 
 class TestRun(QWidget):
@@ -45,8 +46,14 @@ class TestRun(QWidget):
 
         self.start_timer_dialog_signal.connect(self.show_timer_dialog_test)
 
+    # Associated with the timerDialog class.
+    def show_timer_dialog_test(self):
+        self.time_check_dialog.setModal(True)
+        self.time_check_dialog.show()
+
+    ##################### view init #######################
     def init_data(self, cfg_path, power_path, port_path):
-        # 创建测试必须的对象
+        # Creating objects necessary for testing
         self.klipper = KlipperService()
         self.config = PrinterConfig()
         self.port_path = port_path
@@ -59,14 +66,14 @@ class TestRun(QWidget):
         )
         self.creat_timer_test()
 
-        # 初始化一些数据体
+        # Initialise some data bodies
         self.dialog = CustomDialog(self)
         self.last_result = ""
         self.cfg_path = cfg_path
         self.power_path = power_path
         self.loading_git = LoadingPanel(self)
 
-        # 测试模式映射， 跟setting标识一致
+        # Maps the corresponding test mode and gets the currently selected test mode.
         mode_list = GlobalComm.setting_json["test_mode"]
         self.action_list = {
             mode_list["fixture"]: self.fixture_test,
@@ -75,7 +82,8 @@ class TestRun(QWidget):
             mode_list["power"]: self.power_test,
         }
 
-        #! 检查配置文件中目标字段是否存在
+        #! Check if the target field exists in the configuration file
+        # Used to filter the modules that must be tested during testing
         key = "adxl345"
         self.fields_to_check = {
             "adxl345": False,
@@ -85,54 +93,66 @@ class TestRun(QWidget):
     def init_ui(self):
         self.setWindowTitle(GlobalComm.get_langdic_val("view", "test_tile"))
 
-        # 创建垂直布局
+        # Creating a Vertical Layout
         layout = QVBoxLayout()
         button = QPushButton(GlobalComm.get_langdic_val("view", "test_btn"))
         button.clicked.connect(self.on_init_test_map)
         layout.addWidget(button)
 
-        # 创建并添加标签
+        # Create and add tags
         h_layout = QHBoxLayout()
         label = QLabel("serial id: ")
         h_layout.addWidget(label)
 
-        # 创建并添加文本编辑框
+        # Creating and adding text edit boxes
         self.line_edit = QLineEdit()
         h_layout.addWidget(self.line_edit)
 
         layout.addLayout(h_layout)
 
-        # 创建数据表格
+        # Create a data table where the test information is stored.
         table_view = CustomTableView()
         layout.addWidget(table_view)
 
-        # 设置数据模型
-        self.model = QStandardItemModel(0, 4)  # 初始行数为0，列数为4
-        self.reset_model_ui()
+        # Setting up the data model
+        self.table_model = QStandardItemModel(
+            0, 4
+        )  # Initial number of rows is 0, number of columns is 4
+        self.reset_table()
 
-        # 将模型设置到表格视图
-        table_view.setModel(self.model)
+        # Setting the model to table view
+        table_view.setModel(self.table_model)
         table_view.setSelectionMode(
             QTableView.SelectionMode.SingleSelection
-        )  # 单选模式
+        )  # radio mode
         table_view.setSelectionBehavior(
             QTableView.SelectionBehavior.SelectItems
-        )  # 选择单元格
+        )  # Selecting Cells
 
-        # 设置最后一列自动填充
+        # Setting the last column to auto-fill
         header = table_view.horizontalHeader()
         header.setStretchLastSection(True)
 
-        # 应用布局
+        # Application Layout
         self.setLayout(layout)
 
-    def update_cfg(self, is_composite_type, file_path):
-        self.config.set_cfg_mode(is_composite_type)
+    ##################### Function function #######################
+    def update_product_cfg(self, is_combined_file, file_path):
+        """Update the klipper configuration file for the corresponding product.
 
-        # 判断设备是否存在, 不存在弹窗警告
+        Args:
+            is_combined_file (bool): Whether or not to use [include] to bring in test files
+            file_path (string): Corresponding configuration file
+
+        Returns:
+            bool: Success/Failure
+        """
+        self.config.set_cfg_mode(is_combined_file)
+
+        # Determine if the device exists, pop-up warning if it doesn't exist
         self.result = self.config.get_serial_paths()
         if self.result is False:
-            self.klipper_connect_result(
+            self.klipper_connect_task(
                 GlobalComm.get_langdic_val("error_tip", "err_comm_no_device")
             )
             self.dialog.show_warning(
@@ -145,17 +165,18 @@ class TestRun(QWidget):
             GlobalLogger.debug_print("update cfg file")
             self.line_edit.setText(", ".join(self.result))
             config_text = self.config.generate_config(self.result, file_path)
-            if is_composite_type:
+            if is_combined_file:
                 self.config.cp_cfg_printer_dir(file_path)
             self.config.write_config_to_file(config_text)
 
+        # restart klipper
         self.klipper.reset_printer()
         self.last_result = self.result
         return True
 
-    def reset_model_ui(self):
-        self.model.clear()
-        self.model.setHorizontalHeaderLabels(
+    def reset_table(self):
+        self.table_model.clear()
+        self.table_model.setHorizontalHeaderLabels(
             [
                 GlobalComm.get_langdic_val("view", "test_table_col1"),
                 GlobalComm.get_langdic_val("view", "test_table_col2"),
@@ -164,130 +185,52 @@ class TestRun(QWidget):
             ]
         )
 
-    def on_test_complete(self):
-        self.loading_git.stop_gif()
-        self.timer.stop()
+    def make_line_data(self, row_data, background, head_insert=True):
+        items = []
+        for value in row_data:
+            item = QStandardItem(str(value))
+            # Setting non-editable
+            item.setFlags(Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled)
+            item.setBackground(background)
+            items.append(item)
 
-    # 测试中是否断连的报错，若报错则弹窗警告，并提示一些信息
-    def on_test_err(self, result, err):
-        self.loading_git.stop_gif()
-        self.timer.stop()
-        self.dialog.show_warning(result + err)
+        if head_insert:
+            self.table_model.insertRow(0, items)
+            return
+        self.table_model.appendRow(items)
 
-    def creat_timer_test(self, timer_fun=None):
-        self.count = 0
-        self.init_time = 12
-        self.timer = QTimer()
-        self.timer.timeout.connect(lambda: self.timer_run_task(timer_fun))
+    def delete_and_insert_line(self, row, new_items, background):
+        # Check if the line number is in range
+        if 0 <= row < self.table_model.rowCount():
+            # Deletes the specified line
+            self.table_model.removeRow(row)
+            # Insert new data in the same place
+            items = []
+            for value in new_items:
+                item = QStandardItem(str(value))
+                # Setting non-editable
+                item.setFlags(Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled)
+                item.setBackground(background)
+                items.append(item)
+            self.table_model.insertRow(row, items)
+        else:
+            GlobalLogger.debug_print("Line number out of range")
 
-    def creat_test_thread(self, fun):
-        self.analysis_thread = TestThread(fun)
-        self.analysis_thread.bind_event(self.on_test_complete, self.on_test_err)
+    def klipper_connect_task(self, err=""):
+        """The results of the communication tests show that
 
-    ##################### Function function #######################
-    def fixture_test(self):
-        from core.utils.exception.ex_test import TestConnectException
+        Args:
+            err (str, optional): Feedback error messages. Defaults to "".
 
-        self.reset_model_ui()
-        GlobalLogger.divider_head_log("fixture_test")
-
-        try:
-            self.fixture.init_fixture()
-            if self.update_cfg(True, self.cfg_path):
-                self.loading_git.init_loading_QFrame()
-                self.loading_git.run_git()
-                self.timer.start()
-                self.creat_test_thread(self.fixture_test_result)
-        except serial.serialutil.SerialException as e:
-            err = str(e)
-            dialog = CustomDialog()
-            print("fixture_test serial异常：", err)
-            GlobalLogger.log(err)
-            dialog.show_warning("串口无法正常打开")
-        except TestConnectException as e:
-            dialog = CustomDialog()
-            print("fixture_test异常：", e.message)
-            GlobalLogger.log(e.message)
-            GlobalLogger.log(e.message)
-            dialog.show_warning("治具通信异常")
-
-    def fixture_test_result(self):
-        self.dev_test.init_model()
-
-        if self.fields_to_check["adxl345"] is True:
-            self.dev_test.test_adxl345(self.time_dialog, self.start_timer_dialog_signal)
-
-        # self.dev_test.test_rgbw()
-        # self.dev_test.test_fan()
-        self.dev_test.test_btn()
-        # self.dev_test.test_comm_th()
-        #  self.dev_test.test_extruder_th()
-        # self.dev_test.test_motor()
-        # self.dev_test.test_heats()
-        self.save_test_result()
-
-    def save_test_result(self):
-        log = Log()
-        key = self.line_edit.text().split("/")[-1]
-
-        rows_info = []
-        for row in range(self.model.rowCount()):
-            # 提取每一列的数据
-            col0 = self.model.item(row, 0).text()
-            col1 = self.model.item(row, 1).text()
-            col2 = self.model.item(row, 2).text()
-            col3 = self.model.item(row, 3).text()
-
-            rows_info.append([col0, col1, col2, col3])
-            log.add_log_entry(key, col0, col1, col2, col3)
-
-        GlobalLogger.log("\r\nfixtrue test result")
-        GlobalLogger.log(key)
-        rows_info_str = "\r\n".join(" ".join(row) for row in rows_info)
-        GlobalLogger.log(rows_info_str)
-        log.save_logs()
-
-    # 跟使用到timerDialog的类关联
-    def show_timer_dialog_test(self):
-        self.time_dialog.setModal(True)
-        self.time_dialog.show()
-
-    def comm_test(self):
-        if self.update_cfg(False, self.cfg_path):
-
-            GlobalLogger.divider_head_log("connect test")
-
-            self.loading_git.init_loading_QFrame()
-            self.loading_git.run_git()
-            self.timer.start()
-            self.creat_test_thread(self.klipper_connect_result)
-
-    def open_web_control(self):
-        url = GlobalComm.setting_json["klipper_web"]
-        webbrowser.open(url, new=2)
-
-    def sigle_test(self):
-        if self.update_cfg(True, self.cfg_path):
-            GlobalLogger.divider_head_log("sigle test")
-            self.open_web_control()
-
-    def power_test(self):
-        if self.update_cfg(True, self.power_path):
-            GlobalLogger.divider_head_log("power test")
-            self.creat_timer_test(self.power_test_result)
-            self.timer.start()
-            self.open_web_control()
-
-    def power_test_result(self):
-        self.klipper.power_run()
-
-    def klipper_connect_result(self, err=""):
+        Returns:
+            _type_: _description_
+        """
         web_state = self.klipper.get_connect_info()
         state = web_state["state"]
         info_type = GlobalComm.get_langdic_val("view", "test_dev_type")
         GlobalLogger.log("connect test result")
 
-        # 异常未连接
+        # Unusually Unconnected
         if err != "" or state != "ready":
             result = subprocess.run(
                 ["lsusb"], capture_output=True, text=True, check=True
@@ -322,60 +265,163 @@ class TestRun(QWidget):
         self.make_line_data(raw_data, GlobalComm.ok_color)
         return True
 
-    def make_line_data(self, row_data, background, head_insert=True):
-        items = []
-        for value in row_data:
-            item = QStandardItem(str(value))
-            # 设置不可编辑
-            item.setFlags(Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled)
-            item.setBackground(background)
-            items.append(item)
-
-        if head_insert:
-            self.model.insertRow(0, items)
-            return
-        self.model.appendRow(items)
-
-    def delete_and_insert_line(self, row, new_items, background):
-        # 检查行号是否在范围内
-        if 0 <= row < self.model.rowCount():
-            # 删除指定行
-            self.model.removeRow(row)
-            # 在同一位置插入新数据
-            items = []
-            for value in new_items:
-                item = QStandardItem(str(value))
-                # 设置不可编辑
-                item.setFlags(Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled)
-                item.setBackground(background)
-                items.append(item)
-            self.model.insertRow(row, items)
-        else:
-            GlobalLogger.debug_print("行号超出范围")
-
-    ##################### event #######################
-    def on_init_test_map(self):
-        self.time_dialog = TimerDialog()
-        self.time_dialog.set_save_fun(self.save_test_result)
-
-        test_mode = GlobalComm.setting_json["cur_test_mode"]
-        self.action_list[test_mode]()
+    def open_web_control(self):
+        url = GlobalComm.setting_json["klipper_web"]
+        webbrowser.open(url, new=2)
 
     def show(self):
+        """Jump processing according to the current test pattern
+
+        Returns:
+            _type_: _description_
+        """
         test_mode = GlobalComm.setting_json["cur_test_mode"]
         if test_mode == "power" or test_mode == "sigle":
             self.action_list[test_mode]()
         else:
             return super().show()
 
+    ##################### event(The function name of the event with on_) #######################
+
+    def on_init_test_map(self):
+        self.time_check_dialog = TimerDialog()
+        self.time_check_dialog.set_save_fun(self.save_test_result)
+
+        test_mode = GlobalComm.setting_json["cur_test_mode"]
+        self.action_list[test_mode]()
+
+    def creat_timer_test(self, timer_fun=None):
+        self.count = 0
+        self.init_time = 12
+        self.conn_poll_timer = QTimer()
+        # Binding polled functions
+        self.conn_poll_timer.timeout.connect(lambda: self.timer_run_task(timer_fun))
+
     def timer_run_task(self, fun):
+        """Poll the klipper regularly to see if it is connected,
+            and perform the relevant functions if it is connected.
+
+        Args:
+            fun (_type_): If fun exists, then the fun function is executed, otherwise the test thread is executed.
+        """
         self.count += 1
         is_connect = self.klipper.is_connect()
-        if not is_connect and self.count <= self.init_time:
-            self.timer.start(1000)
+        if not is_connect and self.count <= self.init_time:  # 1s loop
+            self.conn_poll_timer.start(1000)
             return
-        elif fun != None:  # 连接上就执行
+        elif fun != None:
             fun()
-        else:  # 连接上， 放置到线程上执行
-            self.analysis_thread.start()
-        self.timer.stop()
+        else:  # Connect it, put it on the test thread and execute it.
+            self.analysis_test_thread.start()
+        self.conn_poll_timer.stop()
+
+    def creat_test_thread(self, fun):
+        self.analysis_test_thread = TestThread(fun)
+        self.analysis_test_thread.bind_event(self.on_test_complete, self.on_test_err)
+
+    def on_test_complete(self):
+        self.loading_git.stop_gif()
+        self.conn_poll_timer.stop()
+
+    # Tests whether the disconnection of the error,
+    # if the error is reported, the pop-up window warning, and prompt some information
+    def on_test_err(self, result, err):
+        self.loading_git.stop_gif()
+        self.conn_poll_timer.stop()
+        self.dialog.show_warning(result + err)
+
+    ##################### Related Tests #######################
+    def fixture_test(self):
+        from core.utils.exception.ex_test import TestConnectException
+
+        self.reset_table()
+        GlobalLogger.divider_head_log("fixture_test")
+
+        try:
+            self.fixture.init_fixture()
+            if self.update_product_cfg(True, self.cfg_path):
+                self.loading_git.init_loading_QFrame()
+                self.loading_git.run_git()
+                self.conn_poll_timer.start()  # Check if klipper is connected, callback test threads
+                self.creat_test_thread(self.fixture_test_result)
+        except serial.serialutil.SerialException as e:
+            err = str(e)
+            dialog = CustomDialog()
+            GlobalLogger.debug_print("fixture_test serial exceptions：", err)
+            GlobalLogger.log(err)
+            dialog.show_warning(
+                GlobalComm.get_langdic_val("exception_tip", "excep_connect_send")
+            )
+        except TestConnectException as e:
+            dialog = CustomDialog()
+            GlobalLogger.debug_print("fixture_test exceptions：", e.message)
+            GlobalLogger.log(e.message)
+            dialog.show_warning(e.message)
+
+    def fixture_test_result(self):
+        try:
+            self.dev_test.init_model()
+
+            if self.fields_to_check["adxl345"] is True:
+                self.dev_test.test_adxl345(
+                    self.time_check_dialog, self.start_timer_dialog_signal
+                )
+
+            # self.dev_test.test_rgbw()
+            # self.dev_test.test_fan()
+            self.dev_test.test_btn()
+            # self.dev_test.test_comm_th()
+            #  self.dev_test.test_extruder_th()
+            # self.dev_test.test_motor()
+            # self.dev_test.test_heats()
+            self.save_test_result()
+        except Exception as e:
+            traceback_msg = traceback.format_exc()
+            print("Fixture Test Abnormal: %s\n%s", str(e), traceback_msg)
+            GlobalLogger.log(traceback_msg)
+
+    def save_test_result(self):
+        log = TestResultLog()
+        key = self.line_edit.text().split("/")[-1]
+
+        rows_info = []
+        for row in range(self.table_model.rowCount()):
+            # Extracting data from each column
+            col0 = self.table_model.item(row, 0).text()
+            col1 = self.table_model.item(row, 1).text()
+            col2 = self.table_model.item(row, 2).text()
+            col3 = self.table_model.item(row, 3).text()
+
+            rows_info.append([col0, col1, col2, col3])
+            log.add_log_entry(key, col0, col1, col2, col3)
+
+        GlobalLogger.log("\r\nfixtrue test result")
+        GlobalLogger.log(key)
+        rows_info_str = "\r\n".join(" ".join(row) for row in rows_info)
+        GlobalLogger.log(rows_info_str)
+        log.save_logs()
+
+    def comm_test(self):
+        if self.update_product_cfg(False, self.cfg_path):
+
+            GlobalLogger.divider_head_log("connect test")
+
+            self.loading_git.init_loading_QFrame()
+            self.loading_git.run_git()
+            self.conn_poll_timer.start()
+            self.creat_test_thread(self.klipper_connect_task)
+
+    def sigle_test(self):
+        if self.update_product_cfg(True, self.cfg_path):
+            GlobalLogger.divider_head_log("sigle test")
+            self.open_web_control()
+
+    def power_test(self):
+        if self.update_product_cfg(True, self.power_path):
+            GlobalLogger.divider_head_log("power test")
+            self.creat_timer_test(self.power_test_result)
+            self.conn_poll_timer.start()
+            self.open_web_control()
+
+    def power_test_result(self):
+        self.klipper.power_run()

@@ -31,7 +31,6 @@ class PrinterConfig:
         return serial_paths
 
     def generate_config(self, serial_paths, cfg_path=None):
-        # 生成配置文本
         config_lines = ["[include fluidd.cfg]\r\n"]
         cfg_mcu = False
 
@@ -59,7 +58,7 @@ class PrinterConfig:
         return "\n".join(config_lines)
 
     def write_config_to_file(self, config_text):
-        # 展开用户目录路径
+        # Expand the user directory path
         expanded_path = os.path.expanduser(PRINTER_CFG_PATH)
         with open(expanded_path, "w") as file:
             file.write(config_text)
