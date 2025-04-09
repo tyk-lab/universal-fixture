@@ -12,8 +12,8 @@ class FileException(Exception):
 
     def __init__(
         self,
-        message=GlobalComm.get_langdic_val("excep_test", "file_result"),
         filepath="",
+        message=GlobalComm.get_langdic_val("excep_file", "file_result"),
         *args,
         **kwargs,
     ):
@@ -26,27 +26,39 @@ class FileReadError(FileException):
     """An exception occurred while reading a file"""
 
     def __init__(
-        self, filepath, message=GlobalComm.get_langdic_val("excep_test", "file_read")
+        self,
+        filepath,
+        message=GlobalComm.get_langdic_val("excep_file", "file_read"),
+        *args,
+        **kwargs,
     ):
-        super().__init__(message, filepath)
+        super().__init__(filepath, message, *args, **kwargs)
 
 
 class FileWriteError(FileException):
     """Exception occurred while writing a file"""
 
     def __init__(
-        self, filepath, message=GlobalComm.get_langdic_val("excep_test", "file_write")
+        self,
+        filepath,
+        message=GlobalComm.get_langdic_val("excep_file", "file_write"),
+        *args,
+        **kwargs,
     ):
-        super().__init__(message, filepath)
+        super().__init__(filepath, message, *args, **kwargs)
 
 
 class FileFormatError(FileException):
     """File format anomalies, e.g. parsing in the wrong format"""
 
     def __init__(
-        self, filepath, message=GlobalComm.get_langdic_val("excep_test", "file_format")
+        self,
+        filepath,
+        message=GlobalComm.get_langdic_val("excep_file", "file_format"),
+        *args,
+        **kwargs,
     ):
-        super().__init__(message, filepath)
+        super().__init__(filepath, message, *args, **kwargs)
 
 
 class FileNotFoundCustomError(FileException):
@@ -55,6 +67,8 @@ class FileNotFoundCustomError(FileException):
     def __init__(
         self,
         filepath,
-        message=GlobalComm.get_langdic_val("excep_test", "file_not_found"),
+        message=GlobalComm.get_langdic_val("excep_file", "file_not_found"),
+        *args,
+        **kwargs,
     ):
-        super().__init__(message, filepath)
+        super().__init__(filepath, message, *args, **kwargs)

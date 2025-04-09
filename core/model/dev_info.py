@@ -4,8 +4,6 @@
 @Desc    :   Obtain product and gage information to determine compliance with requirements
 """
 
-from core.utils.exception.ex_test import TestFailureException
-
 
 class DevInfo:
     def __init__(self, klipper, dicts):
@@ -41,6 +39,8 @@ class DevInfo:
 
     # Check that the function is eligible
     def check_btn_state(self, state):
+        from core.utils.exception.ex_test import TestFailureException
+
         result_dict = self.get_btn_state()
 
         # 判定结果
@@ -69,6 +69,8 @@ class DevInfo:
         return result_dict
 
     def check_th_state(self, th_val, key):
+        from core.utils.exception.ex_test import TestFailureException
+
         result_dict = self.get_th_state(key)
         tolerance = 1  # todo，修改容差
         # print(result_dict)
@@ -103,6 +105,8 @@ class DevInfo:
         self.klipper.run_test_gcode("_TEST_FANS FAN_SPEED=" + value)
 
     def check_fan_state(self, set_val, fixture_dict):
+        from core.utils.exception.ex_test import TestFailureException
+
         # todo, 需要校正
         expected_rpm = {
             "0": 0,
@@ -167,6 +171,8 @@ class DevInfo:
         return result_dict
 
     def check_rgbw_state(self, set_color_dict, fixture_dict):
+        from core.utils.exception.ex_test import TestFailureException
+
         result_dict = self.get_rgbw_state()
         log_dict = {}
         tolerance = 0.2
@@ -205,6 +211,8 @@ class DevInfo:
     ############################## adxl345 Equipment Related ############################
 
     def check_adxl345_state(self, inaccuracies=1000):
+        from core.utils.exception.ex_test import TestFailureException
+
         if self.klipper.is_connect(False):
             cur_val = self.klipper.accelerometer_run()
 
@@ -238,6 +246,8 @@ class DevInfo:
 
     # 脉冲值格式 {"a": 3000, "b": 3000, ...}
     def check_motor_distance(self, fixture_dict):
+        from core.utils.exception.ex_test import TestFailureException
+
         # todo, 设一圈的脉冲数为 200*16*40=128000
         tolerance = 300
         stander_pulses = 128000
@@ -263,6 +273,8 @@ class DevInfo:
         self.klipper.run_test_gcode("_TEST_HEATS RUN=" + enalbe)
 
     def check_heats_state(self, init_temp_dict, next_temp_dict):
+        from core.utils.exception.ex_test import TestFailureException
+
         log_dict = {}
         result_dict = {}
 

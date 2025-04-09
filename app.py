@@ -24,7 +24,6 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QAction
 from PyQt6.QtCore import Qt
 
-from core.utils.exception.ex_file import FileNotFoundCustomError
 from core.utils.opt_log import GlobalLogger
 from core.ui.run_test import TestRun
 from core.model.usb_flash import UsbFlash
@@ -202,6 +201,8 @@ class MainWindow(QMainWindow):
             self.language = GlobalComm.setting_json["language"]
 
     def get_flash_info(self, file_name):
+        from core.utils.exception.ex_file import FileNotFoundCustomError
+
         # 获取文件所在目录
         directory = os.path.dirname(file_name)
 
@@ -213,18 +214,12 @@ class MainWindow(QMainWindow):
             cfg_files = [f for f in os.listdir(directory) if f.endswith(".cfg")]
             cfg_file = [f for f in cfg_files if "test" in f]
             if cfg_files == [] or cfg_file == []:
-                raise FileNotFoundCustomError(
-                    directory,
-                    GlobalComm.get_langdic_val("error_tip", "err_cfg_file_not_found"),
-                )
+                raise FileNotFoundCustomError(directory)
 
             # 查找目录下的port文件
             port_file = [f for f in os.listdir(directory) if f.endswith(".json")]
             if port_file == []:
-                raise FileNotFoundCustomError(
-                    directory,
-                    GlobalComm.get_langdic_val("error_tip", "err_port_file_not_found"),
-                )
+                raise FileNotFoundCustomError(directory)
 
             # 获取治具端口文件
             self.port_path = os.path.join(directory, port_file[0])

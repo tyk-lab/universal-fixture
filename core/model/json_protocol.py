@@ -12,11 +12,6 @@ import struct
 
 from enum import IntEnum
 
-from core.utils.exception.ex_test import (
-    TestFrameBeginException,
-    TestFrameLengthException,
-)
-
 
 # Defining the frame type
 class FrameType(IntEnum):
@@ -34,7 +29,10 @@ def build_key_json(port, dev_name, value=None):
 
 
 def receive_and_parse_frame(ser):
-    from core.utils.msg import CustomDialog
+    from core.utils.exception.ex_test import (
+        TestFrameBeginException,
+        TestFrameLengthException,
+    )
     from core.utils.opt_log import GlobalLogger
 
     # 帧头定义
