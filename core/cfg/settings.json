@@ -11,7 +11,7 @@
     "fixture_serial": "/dev/serial/by-id/usb-LDO-TEST_LDO-TEST_Virtual_ComPort_in_FS_Mode_0000000C0000-if00",
     "power_test_file": "power.cfg",
     "support_firmware": "固件 (*.bin *.uf2)",
-    "klipper_web": "http://localhost:81",
+    "klipper_web": "http://192.168.40.129:81/",
     "support_dev": {
         "rp2040": "Raspberry Pi RP2 Boot",
         "stm32": "STMicroelectronics STM Device in DFU Mode"

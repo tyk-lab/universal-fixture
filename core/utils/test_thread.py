@@ -4,7 +4,9 @@
 @Desc    :   Test thread related
 """
 
+import traceback
 from PyQt6.QtCore import QThread, pyqtSignal, QTimer
+import serial
 
 
 class TestThread(QThread):
@@ -25,9 +27,21 @@ class TestThread(QThread):
 
     # flash device thread
     def run(self):
+        from core.utils.exception.ex_test import TestConnectException
+        from core.utils.opt_log import GlobalLogger
+
         try:
             self.action_fun()
             self.test_complete.emit()
+        except (
+            serial.serialutil.SerialException
+        ) as e:  # Passing on errors during testing
+            err = str(e)
+            GlobalLogger.debug_print("fixture_test serial exceptions：", err)
+            self.error_occurred.emit("test err: ", str(e))
+        except TestConnectException as e:
+            GlobalLogger.debug_print("fixture_test exceptions：", e.message)
+            self.error_occurred.emit("TestConnectException err: ", e.message)
         except Exception as e:
-            print("Exception")
-            self.error_occurred.emit("err: ", str(e))  # Send error signal
+            traceback_msg = traceback.format_exc()
+            self.error_occurred.emit("test err: check log", traceback_msg)

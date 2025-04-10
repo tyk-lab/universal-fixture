@@ -310,8 +310,11 @@ class TestRun(QWidget):
             self.conn_poll_timer.start(1000)
             return
         elif fun != None:
+            self.count = 0
             fun()
+            return
         else:  # Connect it, put it on the test thread and execute it.
+            self.count = 0
             self.analysis_test_thread.start()
         self.conn_poll_timer.stop()
 
@@ -321,64 +324,43 @@ class TestRun(QWidget):
 
     def on_test_complete(self):
         self.loading_git.stop_gif()
-        self.conn_poll_timer.stop()
 
-    # Tests whether the disconnection of the error,
-    # if the error is reported, the pop-up window warning, and prompt some information
+    #! Arbitrary exceptions in the test are signalled and sent here to the
     def on_test_err(self, result, err):
         self.loading_git.stop_gif()
-        self.conn_poll_timer.stop()
+        GlobalLogger.log(err)
         self.dialog.show_warning(result + err)
 
     ##################### Related Tests #######################
     def fixture_test(self):
-        from core.utils.exception.ex_test import TestConnectException
-
         self.reset_table()
         GlobalLogger.divider_head_log("fixture_test")
 
-        try:
-            self.fixture.init_fixture()
-            if self.update_product_cfg(True, self.cfg_path):
-                self.loading_git.init_loading_QFrame()
-                self.loading_git.run_git()
-                self.conn_poll_timer.start()  # Check if klipper is connected, callback test threads
-                self.creat_test_thread(self.fixture_test_result)
-        except serial.serialutil.SerialException as e:
-            err = str(e)
-            dialog = CustomDialog()
-            GlobalLogger.debug_print("fixture_test serial exceptions：", err)
-            GlobalLogger.log(err)
-            dialog.show_warning(
-                GlobalComm.get_langdic_val("exception_tip", "excep_connect_send")
+        if self.update_product_cfg(True, self.cfg_path):
+            self.loading_git.init_loading_QFrame()
+            self.loading_git.run_git()
+            self.conn_poll_timer.start()  # Check if klipper is connected, callback test threads
+            self.creat_test_thread(self.exec_fixture_test)
+
+    def exec_fixture_test(self):
+        from core.utils.exception.ex_test import TestConnectException
+
+        self.fixture.init_fixture()
+        self.dev_test.init_model()
+
+        if self.fields_to_check["adxl345"] is True:
+            self.dev_test.test_adxl345(
+                self.time_check_dialog, self.start_timer_dialog_signal
             )
-        except TestConnectException as e:
-            dialog = CustomDialog()
-            GlobalLogger.debug_print("fixture_test exceptions：", e.message)
-            GlobalLogger.log(e.message)
-            dialog.show_warning(e.message)
 
-    def fixture_test_result(self):
-        try:
-            self.dev_test.init_model()
-
-            if self.fields_to_check["adxl345"] is True:
-                self.dev_test.test_adxl345(
-                    self.time_check_dialog, self.start_timer_dialog_signal
-                )
-
-            # self.dev_test.test_rgbw()
-            # self.dev_test.test_fan()
-            self.dev_test.test_btn()
-            # self.dev_test.test_comm_th()
-            #  self.dev_test.test_extruder_th()
-            # self.dev_test.test_motor()
-            # self.dev_test.test_heats()
-            self.save_test_result()
-        except Exception as e:
-            traceback_msg = traceback.format_exc()
-            print("Fixture Test Abnormal: %s\n%s", str(e), traceback_msg)
-            GlobalLogger.log(traceback_msg)
+        # self.dev_test.test_rgbw()
+        # self.dev_test.test_fan()
+        self.dev_test.test_btn()
+        # self.dev_test.test_comm_th()
+        #  self.dev_test.test_extruder_th()
+        # self.dev_test.test_motor()
+        # self.dev_test.test_heats()
+        self.save_test_result()
 
     def save_test_result(self):
         log = TestResultLog()

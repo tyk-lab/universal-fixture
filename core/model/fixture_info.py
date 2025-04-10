@@ -111,13 +111,10 @@ class FixtureInfo:
         from core.utils.exception.ex_test import TestConnectException
 
         # GlobalLogger.debug_print("dev_frame_dict:\r\n", self.dev_frame_dict)
-        try:
-            for btn in self.dev_frame_dict[dev_type].get(dev_type, []):
-                btn["value"] = value
-            send_json_frame(self.serial_dev, frame_type, self.dev_frame_dict[dev_type])
-            # time.sleep(0.1)
-        except serial.serialutil.SerialException as e:
-            raise TestConnectException()
+        for btn in self.dev_frame_dict[dev_type].get(dev_type, []):
+            btn["value"] = value
+        send_json_frame(self.serial_dev, frame_type, self.dev_frame_dict[dev_type])
+        # time.sleep(0.1)
 
     def send_command_and_format_result(self, frame_type, dev_type):
         """
@@ -129,15 +126,12 @@ class FixtureInfo:
         from core.utils.common import GlobalComm
         from core.utils.exception.ex_test import TestConnectException
 
-        try:
-            send_json_frame(self.serial_dev, frame_type, self.dev_frame_dict[dev_type])
-            reply = self._wait_fixture_reply()
-            if reply != None:
-                fixture_dict = self._format_reply_info(reply)
-                return fixture_dict
-            return None
-        except serial.serialutil.SerialException as e:
-            raise TestConnectException()
+        send_json_frame(self.serial_dev, frame_type, self.dev_frame_dict[dev_type])
+        reply = self._wait_fixture_reply()
+        if reply != None:
+            fixture_dict = self._format_reply_info(reply)
+            return fixture_dict
+        return None
 
     def is_connect(self, exec_init=False):
         """Check that the fixtures are connected
