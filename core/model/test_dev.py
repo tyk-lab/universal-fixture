@@ -4,7 +4,6 @@
 @Desc    :   Define the device testing process and callback related results
 """
 
-from core.model.json_protocol import FrameType
 from core.utils.common import GlobalComm
 from core.model.dev_info import DevInfo
 from PyQt6.QtCore import Qt
@@ -27,7 +26,7 @@ class DevTest:
         }
 
         self.klipper = klipper
-        self.fixtrue = fixtrue
+        self.fixture = fixtrue
         self.dev = DevInfo(klipper, self.dev_dicts)
 
     def set_update_callback(self, add_row_callback, modify_row_callback):
@@ -113,25 +112,23 @@ class DevTest:
         )
 
         klipper_state = self.klipper.is_connect(False)
-        fixture_state = self.fixtrue.is_connect(True)
+        fixture_state = self.fixture.is_connect(True)
         key = "gcode_button "
 
         if klipper_state and fixture_state:
             try:
                 if self.dev_dicts[key] != []:
                     GlobalLogger.divider_head_log("test_btn")
-                    self.fixtrue.sync_dev(FrameType.Sync)
-                    self.fixtrue.send_command(FrameType.Opt, "btnSV", "1")
+                    self.dev.otp_btn_state(self.fixture, "1")
                     self.dev.check_btn_state(True)
 
-                    self.fixtrue.send_command(FrameType.Opt, "btnSV", "0")
+                    self.dev.otp_btn_state(self.fixture, "0")
                     self.dev.check_btn_state(False)
 
                     self.show_result(key)
             except TestFailureException as e:
                 self._test_failture_exception(e, key)
         else:
-            # todo,更新治具状态
             self._raise_connect_exception(klipper_state, fixture_state)
 
     def test_comm_th(self):

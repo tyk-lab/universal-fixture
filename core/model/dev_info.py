@@ -4,6 +4,8 @@
 @Desc    :   Obtain product and gage information to determine compliance with requirements
 """
 
+from core.model.json_protocol import FrameType
+
 
 class DevInfo:
     def __init__(self, klipper, dicts):
@@ -20,12 +22,9 @@ class DevInfo:
         return self.dev_dicts
 
     ############################ btn Equipment Related ############################
-
-    #!todo, 需要初始化设备后才能操作
-    # Operate the inspection board to get the corresponding status
-    def otp_detection_btn_state(self, level):
-        # 设置检测板的电平
-        pass
+    # Controls the relevant port of the btn module, outputs val
+    def otp_btn_state(self, fixture, val):
+        fixture.send_command(FrameType.Opt, "btnSV", val)
 
     # Manipulate the product board to get the corresponding status
     def get_btn_state(self):
@@ -43,12 +42,11 @@ class DevInfo:
 
         result_dict = self.get_btn_state()
 
-        # 判定结果
+        # Findings
         has_exception = not all(value is state for value in result_dict.values())
         log_dict = {}
-        # print(result_dict)
 
-        # 若出错抛异常
+        # Throw an exception if something goes wrong
         if has_exception:
             for key, value in result_dict.items():
                 log_dict[key] = "set " + str(state) + "  cur " + str(result_dict[key])

@@ -150,8 +150,8 @@ class TestRun(QWidget):
         self.config.set_cfg_mode(is_combined_file)
 
         # Determine if the device exists, pop-up warning if it doesn't exist
-        self.result = self.config.get_serial_paths()
-        if self.result is False:
+        result = self.config.get_serial_paths()
+        if result is False or result == []:
             self.klipper_connect_task(
                 GlobalComm.get_langdic_val("error_tip", "err_comm_no_device")
             )
@@ -161,17 +161,17 @@ class TestRun(QWidget):
             return False
 
         # Updating profile information
-        if self.last_result != self.result:
+        if self.last_result != result:
             GlobalLogger.debug_print("update cfg file")
-            self.line_edit.setText(", ".join(self.result))
-            config_text = self.config.generate_config(self.result, file_path)
+            self.line_edit.setText(", ".join(result))
+            config_text = self.config.generate_config(result, file_path)
             if is_combined_file:
                 self.config.cp_cfg_printer_dir(file_path)
             self.config.write_config_to_file(config_text)
 
         # restart klipper
         self.klipper.reset_printer()
-        self.last_result = self.result
+        self.last_result = result
         return True
 
     def reset_table(self):

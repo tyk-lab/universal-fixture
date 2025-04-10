@@ -38,7 +38,9 @@ class TestThread(QThread):
         ) as e:  # Passing on errors during testing
             err = str(e)
             GlobalLogger.debug_print("fixture_test serial exceptions：", err)
-            self.error_occurred.emit("test err: ", str(e))
+            self.error_occurred.emit(
+                "fixture_test serial err:", str(e), "\r\n retry closs, reopen"
+            )
         except TestConnectException as e:
             GlobalLogger.debug_print("fixture_test exceptions：", e.message)
             self.error_occurred.emit("TestConnectException err: ", e.message)
