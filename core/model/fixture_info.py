@@ -23,16 +23,20 @@ class FixtureInfo:
         self.serial_dev = None
         self.dev_frame_dict = {}
 
-    # Initialise the device frame dictionary and initialise the device
+    # Port information is initialised only on serial port exceptions and the first time.
     def _init_port_info(self):
         self.dev_frame_dict.clear()
-
+        need_send_value = "0"
         for dev_module, items in self.port_json.items():
-            need_send_value = "0" if "V" in dev_module else None
-
             frame_info = {dev_module: []}
             if dev_module != None:
                 for dev_name, port in items.items():
+                    if (
+                        dev_name == "default_val"
+                    ):  # Set initial default value according to default_val, can only be 0/1
+                        need_send_value = port
+                        print("val:", need_send_value)
+                        continue
                     key_json = build_key_json(port, dev_name, need_send_value)
                     frame_info[dev_module].append(key_json)
 
@@ -45,6 +49,7 @@ class FixtureInfo:
     def sync_dev(self, frame_type):
         return self.send_command_and_format_result(frame_type, "syncSQ")
 
+    # Retry to initialise the checker only if the serial port is abnormal
     def init_fixture(self, re_init=False):
         from core.utils.exception.ex_test import TestConnectException
         from core.utils.opt_log import GlobalLogger

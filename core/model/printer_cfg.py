@@ -21,7 +21,6 @@ class PrinterConfig:
     # get klipper serial
     def get_serial_paths(self, directory="/dev/serial/by-id"):
         try:
-            print("get_serial_paths")
             serial_paths = [
                 os.path.join(directory, f)
                 for f in os.listdir(directory)

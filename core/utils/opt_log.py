@@ -33,8 +33,9 @@ class GlobalLogger:
             cls.initialize()
 
         # Message append to log file
+        current_time = datetime.now().time().strftime("%H:%M:%S")
         with open(cls.log_file_path, "a", encoding="utf-8") as log_file:
-            log_file.write(message + "\n")
+            log_file.write(current_time + ":" + message + "\n")
         # print(f"Logged: {message}")
 
     @classmethod
