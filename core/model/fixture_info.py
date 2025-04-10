@@ -65,13 +65,15 @@ class FixtureInfo:
                 self._init_port_info()
 
     def realease_resouce(self, re_init):
+        from core.utils.opt_log import GlobalLogger
+
         """If the gage breaks in the middle of the test, the current resources need to be released.
 
         Args:
             re_init (_type_): _description_
         """
         if re_init:
-            print("realease_resouce")
+            GlobalLogger.debug_print("realease_resouce, maybe serial exception")
             self.serial_dev.close()
             self.dev_frame_dict = {}
             self.serial_dev = None

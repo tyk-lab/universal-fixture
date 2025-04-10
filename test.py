@@ -27,7 +27,7 @@ def receive_and_parse_frame(ser):
             if start_byte == FRAME_START:
                 # 读取数据部分
                 data = ser.read(data_size)
-                # print(data)
+                print(data)
                 if len(data) == data_size:
                     try:
                         # 尝试解析为JSON
@@ -163,8 +163,8 @@ def main():
                     receive_and_parse_frame(ser)
 
                 value = 1 if value == 0 else 0
-                # send_json_frame(ser, FrameType.Opt, build_btn_JsonField(value))
-                # send_json_frame(ser, FrameType.Request, build_th_JsonField())
+                send_json_frame(ser, FrameType.Opt, build_btn_JsonField(value))
+                send_json_frame(ser, FrameType.Request, build_th_JsonField())
                 send_json_frame(ser, FrameType.Sync, build_sync_JsonField())
                 # time.sleep(0.3)
 

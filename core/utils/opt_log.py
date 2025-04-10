@@ -32,7 +32,7 @@ class GlobalLogger:
         if cls.log_file_path is None:
             cls.initialize()
 
-        # 将Message append to log file
+        # Message append to log file
         with open(cls.log_file_path, "a", encoding="utf-8") as log_file:
             log_file.write(message + "\n")
         # print(f"Logged: {message}")

@@ -79,7 +79,7 @@ def send_json_frame(ser, infoId, payload):
     # header
     frame_header = struct.pack("<BBI", FRAME_START, MSGID, data_size)
     frame = frame_header + json_data
-    GlobalLogger.log("send_json_frame： " + frame.decode("utf-8"))
+    GlobalLogger.log("send_json_frame data： " + json_str)
 
     # chunk
     chunk_size = 64

@@ -343,8 +343,6 @@ class TestRun(QWidget):
             self.creat_test_thread(self.exec_fixture_test)
 
     def exec_fixture_test(self):
-        from core.utils.exception.ex_test import TestConnectException
-
         self.fixture.init_fixture()
         self.dev_test.init_model()
 
