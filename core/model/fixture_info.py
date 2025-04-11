@@ -31,11 +31,11 @@ class FixtureInfo:
             frame_info = {dev_module: []}
             if dev_module != None:
                 for dev_name, port in items.items():
-                    if (
-                        dev_name == "default_val"
-                    ):  # Set initial default value according to default_val, can only be 0/1
+                    # Skip special labelling information
+                    if dev_name == "default_val":
                         need_send_value = port
-                        print("val:", need_send_value)
+                        continue
+                    if "start" in dev_name or "end" in dev_name:
                         continue
                     key_json = build_key_json(port, dev_name, need_send_value)
                     frame_info[dev_module].append(key_json)
@@ -90,7 +90,7 @@ class FixtureInfo:
             if self.serial_dev.in_waiting:
                 return receive_and_parse_frame(self.serial_dev)
 
-            if wait_time_cnt > 100000:
+            if wait_time_cnt > 500000:
                 return None
 
     def _format_reply_info(self, reply):
@@ -114,31 +114,51 @@ class FixtureInfo:
         """
         Only applicable to keys with "V" device type.
         """
-        from core.utils.common import GlobalComm
-        from core.utils.exception.ex_test import TestConnectException
-
         # GlobalLogger.debug_print("dev_frame_dict:\r\n", self.dev_frame_dict)
-        for btn in self.dev_frame_dict[dev_type].get(dev_type, []):
-            btn["value"] = value
+        for dev in self.dev_frame_dict[dev_type].get(dev_type, []):
+            dev["value"] = value
         send_json_frame(self.serial_dev, frame_type, self.dev_frame_dict[dev_type])
         # time.sleep(0.1)
 
-    def send_command_and_format_result(self, frame_type, dev_type):
+    def send_command_and_format_result(self, frame_type, dev_type, frame_dict=None):
         """
         Sending control commands and receiving relevant data
         frame_type: class FrameType(IntEnum)Related Data
         dev_type: btnSV, fanSQ, device class in protocol (on key in port's json file)
         """
 
-        from core.utils.common import GlobalComm
-        from core.utils.exception.ex_test import TestConnectException
-
-        send_json_frame(self.serial_dev, frame_type, self.dev_frame_dict[dev_type])
+        if frame_dict != None:
+            send_json_frame(self.serial_dev, frame_type, frame_dict)
+        else:
+            send_json_frame(self.serial_dev, frame_type, self.dev_frame_dict[dev_type])
         reply = self._wait_fixture_reply()
         if reply != None:
             fixture_dict = self._format_reply_info(reply)
             return fixture_dict
         return None
+
+    # Intercepts special segment areas in port configurations,
+    # delineating segment area fields and non-segment area fields
+    def extract_fields_between_keys(self, dev_type, start_key="start", end_key="end"):
+        fields_frame_info = {dev_type: []}
+        comm_frame_info = {dev_type: []}
+        is_start_fields = False
+
+        thSQ_data = self.port_json.get("thSQ", {})
+        for dev_name, port in thSQ_data.items():
+            if start_key in dev_name:
+                is_start_fields = True
+                continue
+            elif end_key in dev_name:
+                is_start_fields = False
+                continue
+
+            key_json = build_key_json(port, dev_name)
+            if is_start_fields:
+                fields_frame_info[dev_type].append(key_json)
+            else:
+                comm_frame_info[dev_type].append(key_json)
+        return fields_frame_info, comm_frame_info
 
     def is_connect(self, exec_init=False):
         """Check that the fixtures are connected

@@ -5,6 +5,7 @@
 """
 
 from core.model.json_protocol import FrameType
+from core.utils.thermistor import CustomThermistor
 
 
 class DevInfo:
@@ -13,6 +14,7 @@ class DevInfo:
         self.dev_dicts = dicts
 
         self.prev_val = 0, 0, 0
+        self.thermistor = CustomThermistor()
 
     def get_dev_info(self):
         for key in self.dev_dicts.keys():
@@ -27,8 +29,7 @@ class DevInfo:
         fixture.send_command(FrameType.Opt, "btnSV", val)
 
     # Manipulate the product board to get the corresponding status
-    def get_btn_state(self):
-        key = "gcode_button "
+    def get_btn_state(self, key):
         result_dict = {}
         if self.dev_dicts[key] != []:
             sensor_dict = self.klipper.get_info(key)
@@ -37,26 +38,38 @@ class DevInfo:
         return result_dict
 
     # Check that the function is eligible
-    def check_btn_state(self, state):
+    def check_btn_state(self, key, state):
         from core.utils.exception.ex_test import TestFailureException
 
-        result_dict = self.get_btn_state()
+        dev_dict = self.get_btn_state(key)
 
         # Findings
-        has_exception = not all(value is state for value in result_dict.values())
+        has_exception = not all(value is state for value in dev_dict.values())
         log_dict = {}
 
         # Throw an exception if something goes wrong
         if has_exception:
-            for key, value in result_dict.items():
-                log_dict[key] = "set " + str(state) + "  cur " + str(result_dict[key])
+            for key, value in dev_dict.items():
+                log_dict[key] = (
+                    "fixture set: " + str(state) + " dev val： " + str(dev_dict[key])
+                )
                 if value is not state:
-                    result_dict[key] = False
+                    dev_dict[key] = False
                 else:
-                    result_dict[key] = True
-            raise TestFailureException(result_dict, log_dict)
+                    dev_dict[key] = True
+            raise TestFailureException(dev_dict, log_dict)
 
     ############################## th Equipment Related ############################
+
+    def req_th_state(self, fixture):
+        _, comm_frame_info = fixture.extract_fields_between_keys("thSQ")
+        result = fixture.send_command_and_format_result(
+            FrameType.Request, "thSQ", comm_frame_info
+        )
+        if result != None:
+            for key, value in result.items():
+                result[key] = self.thermistor.get_temp(float(value))
+        return result
 
     def get_th_state(self, key):
         result_dict = {}
@@ -66,27 +79,29 @@ class DevInfo:
                 result_dict[key] = value["temperature"]
         return result_dict
 
-    def check_th_state(self, th_val, key):
+    def check_th_state(self, key, fixture_dict):
         from core.utils.exception.ex_test import TestFailureException
+        from core.utils.common import GlobalComm
 
-        result_dict = self.get_th_state(key)
-        tolerance = 1  # todo，修改容差
-        # print(result_dict)
+        dev_dict = self.get_th_state(key)
+        tolerance = float(GlobalComm.setting_json["temp_check_tolerance"])
+
         log_dict = {}
-
         has_exception = False
-        # 判定结果
-        for key, value in result_dict.items():
+        # Equipment Comparison Fixture Values
+        for key, value in dev_dict.items():
+            fixture_val = float(fixture_dict[key])
             log_dict[key] = (
-                "fixture th: " + str(th_val) + "  cur " + str(result_dict[key])
+                "fixture th: " + str(fixture_val) + " dev th: " + str(dev_dict[key])
             )
-            if value < th_val + tolerance and value > th_val - tolerance:
-                result_dict[key] = True
+
+            if value < fixture_val + tolerance and value > fixture_val - tolerance:
+                dev_dict[key] = True
             else:
-                result_dict[key] = False
+                dev_dict[key] = False
                 has_exception = True
         if has_exception:
-            raise TestFailureException(result_dict, log_dict)
+            raise TestFailureException(dev_dict, log_dict)
 
     ############################## fan Equipment Related ############################
 

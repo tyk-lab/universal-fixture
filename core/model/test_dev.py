@@ -120,10 +120,10 @@ class DevTest:
                 if self.dev_dicts[key] != []:
                     GlobalLogger.divider_head_log("test_btn")
                     self.dev.otp_btn_state(self.fixture, "1")
-                    self.dev.check_btn_state(True)
+                    self.dev.check_btn_state(key, True)
 
                     self.dev.otp_btn_state(self.fixture, "0")
-                    self.dev.check_btn_state(False)
+                    self.dev.check_btn_state(key, False)
 
                     self.show_result(key)
             except TestFailureException as e:
@@ -132,23 +132,26 @@ class DevTest:
             self._raise_connect_exception(klipper_state, fixture_state)
 
     def test_comm_th(self):
-        # todo,命令开始前，判断下两边的状态
-        klipper_state = self.klipper.is_connect(False)
-        key = "temperature_sensor "
+        from core.utils.opt_log import GlobalLogger
+        from core.utils.exception.ex_test import (
+            TestFailureException,
+        )
 
+        klipper_state = self.klipper.is_connect(False)
+        fixture_state = self.fixture.is_connect(True)
+
+        key = "temperature_sensor "
         if klipper_state:
             try:
                 if self.dev_dicts[key] != []:
-                    # todo，获取万能板温感值
-                    fixture_th = 23
-                    self.dev.check_th_state(fixture_th, key)
+                    GlobalLogger.divider_head_log("comm_th")
+                    fixture_dict = self.dev.req_th_state(self.fixture)
+                    self.dev.check_th_state(key, fixture_dict)
                     self.show_result(key)
-                    return
-            except Exception as e:
+            except TestFailureException as e:
                 self._test_failture_exception(e, key)
         else:
-            # todo,更新治具状态
-            self._raise_connect_exception(klipper_state, False)
+            self._raise_connect_exception(klipper_state, fixture_state)
 
     def test_extruder_th(self):
         klipper_state = self.klipper.is_connect(False)
