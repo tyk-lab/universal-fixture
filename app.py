@@ -226,15 +226,20 @@ class MainWindow(QMainWindow):
 
         try:
             # Find the cfg file in the directory
+            self.port_path = ""
+            self.power_cfg_path = ""
+            self.cfg_file_path = ""
+
             cfg_files = [f for f in os.listdir(directory) if f.endswith(".cfg")]
             cfg_file = [f for f in cfg_files if "test" in f]
             if cfg_files == [] or cfg_file == []:
-                raise FileNotFoundCustomError(directory)
+                raise FileNotFoundCustomError("\r\ncfg_file not found: " + directory)
 
             # Look for the port file in the directory
+            cur_test = GlobalComm.setting_json["cur_test_mode"]
             port_file = [f for f in os.listdir(directory) if f.endswith(".json")]
-            if port_file == []:
-                raise FileNotFoundCustomError(directory)
+            if port_file == [] and cur_test == "fixture":
+                raise FileNotFoundCustomError("\r\nport_file not found: " + directory)
 
             # Get Fixture Port File
             self.port_path = os.path.join(directory, port_file[0])
@@ -255,7 +260,6 @@ class MainWindow(QMainWindow):
             )
 
             # Getting the Power Test File
-            self.power_cfg_path = ""
             power_test_file = GlobalComm.setting_json["power_test_file"]
             if power_test_file in cfg_files:
                 self.power_cfg_path = os.path.join(directory, power_test_file)
