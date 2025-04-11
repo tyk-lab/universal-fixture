@@ -61,29 +61,37 @@ class DevInfo:
 
     ############################## th Equipment Related ############################
 
-    def req_th_state(self, fixture):
-        _, comm_frame_info = fixture.extract_fields_between_keys("thSQ")
+    def req_th_state(self, fixture, is_fields_key):
+        fields_frame_info, comm_frame_info = fixture.extract_fields_between_keys("thSQ")
+        frame_info = comm_frame_info
+        if is_fields_key:
+            frame_info = fields_frame_info
         result = fixture.send_command_and_format_result(
-            FrameType.Request, "thSQ", comm_frame_info
+            FrameType.Request, "thSQ", frame_info
         )
         if result != None:
             for key, value in result.items():
                 result[key] = self.thermistor.get_temp(float(value))
         return result
 
-    def get_th_state(self, key):
+    def get_th_state(self, klipper_key, is_fields_key):
         result_dict = {}
-        if self.dev_dicts[key] != []:
-            sensor_dict = self.klipper.get_info(key)
-            for key, value in sensor_dict.items():
-                result_dict[key] = value["temperature"]
+        if self.dev_dicts[klipper_key] != []:
+            sensor_dict = self.klipper.get_info(klipper_key)
+            if not is_fields_key:
+                for key, value in sensor_dict.items():
+                    result_dict[key] = value["temperature"]
+            else:
+                for key, value in sensor_dict.items():
+                    if "temperature" in value:
+                        result_dict[klipper_key] = value["temperature"]
         return result_dict
 
     def check_th_state(self, key, fixture_dict):
         from core.utils.exception.ex_test import TestFailureException
         from core.utils.common import GlobalComm
 
-        dev_dict = self.get_th_state(key)
+        dev_dict = self.get_th_state(key, False)
         tolerance = float(GlobalComm.setting_json["temp_check_tolerance"])
 
         log_dict = {}
@@ -100,6 +108,20 @@ class DevInfo:
             else:
                 dev_dict[key] = False
                 has_exception = True
+        if has_exception:
+            raise TestFailureException(dev_dict, log_dict)
+
+    def check_ex_th_state(self, key):
+        from core.utils.exception.ex_test import TestFailureException
+        from core.utils.common import GlobalComm
+
+        dev_dict = self.get_th_state(key, False)
+        tolerance = float(GlobalComm.setting_json["temp_check_tolerance"])
+
+        log_dict = {}
+        has_exception = False
+        # todo 判断温度的变化，是否升温还是降温
+
         if has_exception:
             raise TestFailureException(dev_dict, log_dict)
 

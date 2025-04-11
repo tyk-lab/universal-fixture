@@ -141,11 +141,11 @@ class DevTest:
         fixture_state = self.fixture.is_connect(True)
 
         key = "temperature_sensor "
-        if klipper_state:
+        if klipper_state and fixture_state:
             try:
                 if self.dev_dicts[key] != []:
                     GlobalLogger.divider_head_log("comm_th")
-                    fixture_dict = self.dev.req_th_state(self.fixture)
+                    fixture_dict = self.dev.req_th_state(self.fixture, False)
                     self.dev.check_th_state(key, fixture_dict)
                     self.show_result(key)
             except TestFailureException as e:
@@ -154,27 +154,36 @@ class DevTest:
             self._raise_connect_exception(klipper_state, fixture_state)
 
     def test_extruder_th(self):
+        from core.utils.opt_log import GlobalLogger
+        from core.utils.exception.ex_test import (
+            TestFailureException,
+        )
+
         klipper_state = self.klipper.is_connect(False)
+        fixture_state = self.fixture.is_connect(True)
+
         key = "extruder"
         other_key = "heater_bed"
-
-        if klipper_state:
+        if klipper_state and fixture_state:
             try:
+                # todo, 这里需要设置温度，查看温度是否上升或下降（）
                 if self.dev_dicts[key] != []:
-                    # todo，获取万能板温感值
-                    fixture_th = 23
-                    self.dev.check_th_state(fixture_th, key)
+                    GlobalLogger.divider_head_log("extruder_th")
+                    fixture_dict = self.dev.req_th_state(
+                        self.fixture, True
+                    )  # todo,可能需要
+                    self.dev.check_ex_th_state(key)
                     self.show_result(key)
 
                 if self.dev_dicts[other_key] != []:
-                    self.dev.check_th_state(fixture_th, other_key)
+                    GlobalLogger.divider_head_log("heater_bed_th")
+                    fixture_dict = self.dev.req_th_state(self.fixture, True)
+                    self.dev.check_th_state(other_key, fixture_dict)
                     self.show_result(other_key)
-                return
-            except Exception as e:
+            except TestFailureException as e:
                 self._test_failture_exception(e, key)
         else:
-            # todo,更新治具状态
-            self._raise_connect_exception(klipper_state, False)
+            self._raise_connect_exception(klipper_state, fixture_state)
 
     def test_fan(self):
         klipper_state = self.klipper.is_connect(False)
