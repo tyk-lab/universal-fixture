@@ -156,7 +156,7 @@ class DevInfo:
         from core.utils.common import GlobalComm
 
         # It's at least 10 degrees off.
-        tolerance = float(GlobalComm.setting_json["temp_check_tolerance"]) + 20
+        tolerance = float(GlobalComm.setting_json["heat_temp_check_tolerance"])
 
         log_dict = {}
         dev_check_dict = {}
