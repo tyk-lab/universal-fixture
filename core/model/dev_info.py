@@ -4,6 +4,7 @@
 @Desc    :   Obtain product and gage information to determine compliance with requirements
 """
 
+import time
 from core.model.json_protocol import FrameType
 from core.utils.thermistor import CustomThermistor
 
@@ -41,27 +42,39 @@ class DevInfo:
     def check_btn_state(self, key, state):
         from core.utils.exception.ex_test import TestFailureException
 
-        dev_dict = self.get_btn_state(key)
+        dev_check_dict = self.get_btn_state(key)
 
         # Findings
-        has_exception = not all(value is state for value in dev_dict.values())
+        has_exception = not all(value is state for value in dev_check_dict.values())
         log_dict = {}
 
         # Throw an exception if something goes wrong
         if has_exception:
-            for key, value in dev_dict.items():
+            for key, value in dev_check_dict.items():
                 log_dict[key] = (
-                    "fixture set: " + str(state) + " dev val： " + str(dev_dict[key])
+                    "fixture set: "
+                    + str(state)
+                    + " dev val： "
+                    + str(dev_check_dict[key])
                 )
                 if value is not state:
-                    dev_dict[key] = False
+                    dev_check_dict[key] = False
                 else:
-                    dev_dict[key] = True
-            raise TestFailureException(dev_dict, log_dict)
+                    dev_check_dict[key] = True
+            raise TestFailureException(dev_check_dict, log_dict)
 
     ############################## th Equipment Related ############################
 
     def req_th_state(self, fixture, is_fields_key):
+        """Get the value of th temperature in the fixture
+
+        Args.
+            fixture (_type_): fixture handle
+            is_fields_key (bool): Check if it's a start_heat_th-end_heat_th field
+
+        Returns:
+            _type_: Returns a sequence of temperature sensors, e.g. {th0: "31.32", th0: "32.12"}
+        """
         fields_frame_info, comm_frame_info = fixture.extract_fields_between_keys("thSQ")
         frame_info = comm_frame_info
         if is_fields_key:
@@ -75,6 +88,15 @@ class DevInfo:
         return result
 
     def get_th_state(self, klipper_key, is_fields_key):
+        """Get the value of temperature sensing
+
+        Args:
+            klipper_key (_type_): name of the temperature sensing in the klipper
+            is_fields_key (bool): confirm special temperature sensing value information (e.g., problems with extruder and bed types)
+
+        Returns.
+            _type_: Returns a sequence of temperature sensors, e.g. {th0: "31.32", th0: "32.12"}
+        """
         result_dict = {}
         if self.dev_dicts[klipper_key] != []:
             sensor_dict = self.klipper.get_info(klipper_key)
@@ -91,39 +113,81 @@ class DevInfo:
         from core.utils.exception.ex_test import TestFailureException
         from core.utils.common import GlobalComm
 
-        dev_dict = self.get_th_state(key, False)
+        dev_check_dict = self.get_th_state(key, False)
         tolerance = float(GlobalComm.setting_json["temp_check_tolerance"])
 
         log_dict = {}
         has_exception = False
         # Equipment Comparison Fixture Values
-        for key, value in dev_dict.items():
+        for key, value in dev_check_dict.items():
             fixture_val = float(fixture_dict[key])
             log_dict[key] = (
-                "fixture th: " + str(fixture_val) + " dev th: " + str(dev_dict[key])
+                "tolerance: "
+                + str(tolerance)
+                + "\r\nfixture th: "
+                + str(fixture_val)
+                + " dev th: "
+                + str(dev_check_dict[key])
             )
 
             if value < fixture_val + tolerance and value > fixture_val - tolerance:
-                dev_dict[key] = True
+                dev_check_dict[key] = True
             else:
-                dev_dict[key] = False
+                dev_check_dict[key] = False
                 has_exception = True
         if has_exception:
-            raise TestFailureException(dev_dict, log_dict)
+            raise TestFailureException(dev_check_dict, log_dict)
 
-    def check_ex_th_state(self, key):
+    ############################## heat Equipment Related ############################
+
+    def run_heat(self, value):
+        self.klipper.run_test_gcode("_TEST_HEATS RUN=" + value)
+
+    def control_heating_cooling(self, fixture, is_temp_up):
+        first_fixture_dict = self.req_th_state(fixture, True)
+        time.sleep(1)
+        self.run_heat("1" if is_temp_up else "0")
+        time.sleep(5)
+        second_fixture_dict = self.req_th_state(fixture, True)
+        return first_fixture_dict, second_fixture_dict
+
+    def check_ex_th_state(self, first_dict, second_dict, is_temp_up):
         from core.utils.exception.ex_test import TestFailureException
         from core.utils.common import GlobalComm
 
-        dev_dict = self.get_th_state(key, False)
-        tolerance = float(GlobalComm.setting_json["temp_check_tolerance"])
+        # It's at least 10 degrees off.
+        tolerance = float(GlobalComm.setting_json["temp_check_tolerance"]) + 20
 
         log_dict = {}
+        dev_check_dict = {}
         has_exception = False
-        # todo 判断温度的变化，是否升温还是降温
+        for key, value in first_dict.items():
+            first_val = float(first_dict[key])
+            second_val = float(second_dict[key])
 
+            # If it does not match the expected heating or cooling effect, there is an abnormality
+            has_exception = not (
+                second_val > first_val + tolerance
+                if is_temp_up
+                else first_val > second_val + tolerance
+            )
+
+            # There is an abnormality, and the result of the device detection is False
+            dev_check_dict[key] = not has_exception
+            # print("\r\ncheck_ex_th_state", key, is_temp_up, log_dict[key])
+            sub_val = (
+                second_val - first_val
+            )  #! A positive value (2>1) when heated and a negative value (2<1) when cooled.
+            log_dict[key] = (
+                "heat dir: " + str(is_temp_up),  # Cooling is False, heating bit True
+                "result: " + str(dev_check_dict[key]),
+                "tolerance: " + str(tolerance),
+                "th 2 sub 1 val: " + "{:.2f}".format(sub_val),
+                "first th: " + str(first_val),
+                "second th: " + str(second_val),
+            )
         if has_exception:
-            raise TestFailureException(dev_dict, log_dict)
+            raise TestFailureException(dev_check_dict, log_dict)
 
     ############################## fan Equipment Related ############################
 
@@ -172,11 +236,6 @@ class DevInfo:
 
         if has_exception:
             raise TestFailureException(result_dict, log_dict)
-
-    ############################## heat Equipment Related ############################
-
-    def run_heat(self, value):
-        self.klipper.run_test_gcode("_TEST_HEATS VAL=" + value)
 
     ############################## rgbw Equipment Related ############################
 

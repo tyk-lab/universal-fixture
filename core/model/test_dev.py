@@ -4,11 +4,13 @@
 @Desc    :   Define the device testing process and callback related results
 """
 
+import json
 from core.utils.common import GlobalComm
 from core.model.dev_info import DevInfo
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QStandardItem, QColor
 import traceback
+import time
 
 
 class DevTest:
@@ -36,11 +38,28 @@ class DevTest:
     def init_model(self):
         self.dev_dicts = self.dev.get_dev_info()
 
+    def show_keys_result(self, key_tuple, log_dict=None, result_dict=None):
+        """Show results for multiple key values like (key1, key2)
+
+        Args:
+            key_tuple (_type_): key tuple (key1, key2)
+            log_dict (_type_, optional): Log messages on exceptions. Defaults to None.
+            result_dict (_type_, optional): Results of the test. Defaults to None.
+        """
+        result = True
+        if result_dict != None:
+            result = all(value is True for value in result_dict.values())
+        # Converting a dictionary to a formatted JSON string
+        json_str = json.dumps(log_dict, indent=2, ensure_ascii=False)
+        # Converts escaped characters to actual characters by decoding them
+        formatted_str = json_str.encode("utf-8").decode("unicode_escape")
+        self.show_sigle_result(key_tuple, result, formatted_str)
+
     def show_result(self, key, log_dict=None, result_dict=None):
         """Display the results of the test
 
         Args:
-            key (_type_): Keywords for klipper
+            key (_type_): Keywords for klipper, like fan, adxl345, gcode_button etc
             log_dict (_type_, optional): Not None is an exception log message. Defaults to None.
             result_dict (_type_, optional):
             If it is not None, the test result will be displayed abnormally. Defaults to None.
@@ -69,7 +88,7 @@ class DevTest:
 
     def show_sigle_result(self, key, result, log):
         color = GlobalComm.err_color
-        if result:
+        if result or result == None:
             color = GlobalComm.ok_color
 
         raw_data = [
@@ -94,12 +113,23 @@ class DevTest:
             "fixture state " + str(fixture_state),
         )
 
+    def _test_keys_failture_exception(self, e, key_tuple):
+        """If the test fails, go here to display an exception message
+
+        Args:
+            e (_type_): Exception parameters
+            key_tuple (_type_): klipper key tuple
+        """
+        result_dict = e.args[0]
+        log_dict = e.args[1]
+        self.show_keys_result(key_tuple, log_dict, result_dict)
+
     def _test_failture_exception(self, e, key):
         """If the test fails, go here to display an exception message
 
         Args:
-            e (_type_): _description_
-            key (_type_): _description_
+            e (_type_): Exception parameters
+            key (_type_): klipper key
         """
         result_dict = e.args[0]
         log_dict = e.args[1]
@@ -166,22 +196,21 @@ class DevTest:
         other_key = "heater_bed"
         if klipper_state and fixture_state:
             try:
-                # todo, 这里需要设置温度，查看温度是否上升或下降（）
-                if self.dev_dicts[key] != []:
-                    GlobalLogger.divider_head_log("extruder_th")
-                    fixture_dict = self.dev.req_th_state(
-                        self.fixture, True
-                    )  # todo,可能需要
-                    self.dev.check_ex_th_state(key)
-                    self.show_result(key)
+                if self.dev_dicts[key] != [] or self.dev_dicts[other_key]:
+                    GlobalLogger.divider_head_log("extruder_th or heater_bed_th")
 
-                if self.dev_dicts[other_key] != []:
-                    GlobalLogger.divider_head_log("heater_bed_th")
-                    fixture_dict = self.dev.req_th_state(self.fixture, True)
-                    self.dev.check_th_state(other_key, fixture_dict)
-                    self.show_result(other_key)
+                    first_dict, second_dict = self.dev.control_heating_cooling(
+                        self.fixture, True
+                    )
+                    self.dev.check_ex_th_state(first_dict, second_dict, True)
+
+                    first_dict, second_dict = self.dev.control_heating_cooling(
+                        self.fixture, False
+                    )
+                    self.dev.check_ex_th_state(first_dict, second_dict, False)
+                    self.show_keys_result((key, other_key))
             except TestFailureException as e:
-                self._test_failture_exception(e, key)
+                self._test_keys_failture_exception(e, (key, other_key))
         else:
             self._raise_connect_exception(klipper_state, fixture_state)
 
