@@ -11,6 +11,7 @@
     "temp_type": "NTC_100K_4_R025H4G",
     "temp_pullup_resistor": "2200",
     "temp_check_tolerance": "3",
+    "normal_temp_range": "(10-35)",
     "heat_temp_check_tolerance": "20",
     "fixture_serial": "/dev/serial/by-id/usb-LDO-TEST_LDO-TEST_Virtual_ComPort_in_FS_Mode_0000000C0000-if00",
     "power_test_file": "power.cfg",

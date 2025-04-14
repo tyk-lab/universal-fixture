@@ -133,8 +133,7 @@ class FixtureInfo:
             send_json_frame(self.serial_dev, frame_type, self.dev_frame_dict[dev_type])
         reply = self._wait_fixture_reply()
         if reply != None:
-            fixture_dict = self._format_reply_info(reply)
-            return fixture_dict
+            return self._format_reply_info(reply)
         return None
 
     # Intercepts special segment areas in port configurations,
@@ -144,7 +143,7 @@ class FixtureInfo:
         comm_frame_info = {dev_type: []}
         is_start_fields = False
 
-        thSQ_data = self.port_json.get("thSQ", {})
+        thSQ_data = self.port_json.get(dev_type, {})
         for dev_name, port in thSQ_data.items():
             if start_key in dev_name:
                 is_start_fields = True

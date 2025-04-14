@@ -65,7 +65,7 @@ class DevInfo:
 
     ############################## th Equipment Related ############################
 
-    def req_th_state(self, fixture, is_fields_key):
+    def req_th_info(self, fixture, is_fields_key):
         """Get the value of th temperature in the fixture
 
         Args.
@@ -79,15 +79,15 @@ class DevInfo:
         frame_info = comm_frame_info
         if is_fields_key:
             frame_info = fields_frame_info
-        result = fixture.send_command_and_format_result(
+        result_dict = fixture.send_command_and_format_result(
             FrameType.Request, "thSQ", frame_info
         )
-        if result != None:
-            for key, value in result.items():
-                result[key] = self.thermistor.get_temp(float(value))
-        return result
+        if result_dict != None:
+            for key, value in result_dict.items():
+                result_dict[key] = self.thermistor.get_temp(float(value))
+        return result_dict
 
-    def get_th_state(self, klipper_key, is_fields_key):
+    def get_th_info(self, klipper_key, is_fields_key):
         """Get the value of temperature sensing
 
         Args:
@@ -109,34 +109,83 @@ class DevInfo:
                         result_dict[klipper_key] = value["temperature"]
         return result_dict
 
-    def check_th_state(self, key, fixture_dict):
+    def _get_normal_temp_range(self):
+        from core.utils.common import GlobalComm
+
+        # For example "(10-35)"
+        s = GlobalComm.setting_json["normal_temp_range"]
+        s_inner = s[1:-1]  # get "10-35"
+        number_strs = s_inner.split(
+            "-"
+        )  # Split to get a list of number strings: ['10', '35']
+        return [
+            float(num) for num in number_strs
+        ]  # Convert to floating point numbers: [10.0, 35.0]
+
+    def check_th(self, key, fixture_dict):
         from core.utils.exception.ex_test import TestFailureException
         from core.utils.common import GlobalComm
 
-        dev_check_dict = self.get_th_state(key, False)
+        dev_dict = self.get_th_info(key, False)
         tolerance = float(GlobalComm.setting_json["temp_check_tolerance"])
 
+        normal_temp_range = self._get_normal_temp_range()
+        lower_bound = min(normal_temp_range)
+        upper_bound = max(normal_temp_range)
+
         log_dict = {}
+        dev_check_dict = {}
         has_exception = False
+        check_cnt = 0
         # Equipment Comparison Fixture Values
-        for key, value in dev_check_dict.items():
+        for key, value in dev_dict.items():
             fixture_val = float(fixture_dict[key])
+
+            # Two comparisons. Big difference.
+            if value < fixture_val + tolerance and value > fixture_val - tolerance:
+                check_cnt += 1
+
+            # In the normal temperature range
+            if lower_bound <= value <= upper_bound:
+                check_cnt += 1
+
+            has_exception = check_cnt < 2
+            if has_exception:
+                dev_check_dict[key] = False
+
             log_dict[key] = (
                 "tolerance: "
                 + str(tolerance)
                 + "\r\nfixture th: "
                 + str(fixture_val)
                 + " dev th: "
-                + str(dev_check_dict[key])
+                + str(value)
+                + "\r\ncheck part cnt"
+                + str(check_cnt)
             )
 
-            if value < fixture_val + tolerance and value > fixture_val - tolerance:
-                dev_check_dict[key] = True
-            else:
-                dev_check_dict[key] = False
-                has_exception = True
         if has_exception:
             raise TestFailureException(dev_check_dict, log_dict)
+
+    ############################## vol Equipment Related ############################
+
+    def req_vol_info(self, fixture, is_fields_key, is_verbose):
+        # todo, 获取电压，电流，功耗信息，待验证
+        fields_frame_info, comm_frame_info = fixture.extract_fields_between_keys(
+            "volSQ"
+        )
+        frame_info = comm_frame_info
+        if is_fields_key:
+            frame_info = fields_frame_info
+        result_dict = fixture.send_command_and_format_result(
+            FrameType.Request, "volSQ", frame_info
+        )
+
+        if result_dict != None and not is_verbose:
+            result_dict = {k: v.split(",")[0].strip() for k, v in result_dict.items()}
+
+        print("req_vol_info: ", result_dict)
+        return result_dict
 
     ############################## heat Equipment Related ############################
 
@@ -144,18 +193,18 @@ class DevInfo:
         self.klipper.run_test_gcode("_TEST_HEATS RUN=" + value)
 
     def control_heating_cooling(self, fixture, is_temp_up):
-        first_fixture_dict = self.req_th_state(fixture, True)
+        first_fixture_dict = self.req_th_info(fixture, True)
         time.sleep(1)
         self.run_heat("1" if is_temp_up else "0")
         time.sleep(5)
-        second_fixture_dict = self.req_th_state(fixture, True)
+        second_fixture_dict = self.req_th_info(fixture, True)
         return first_fixture_dict, second_fixture_dict
 
-    def check_ex_th_state(self, first_dict, second_dict, is_temp_up):
+    def check_ex_th(self, first_dict, second_dict, vol_dict, is_temp_up):
         from core.utils.exception.ex_test import TestFailureException
         from core.utils.common import GlobalComm
+        from core.utils.opt_log import GlobalLogger
 
-        # It's at least 10 degrees off.
         tolerance = float(GlobalComm.setting_json["heat_temp_check_tolerance"])
 
         log_dict = {}
@@ -174,7 +223,6 @@ class DevInfo:
 
             # There is an abnormality, and the result of the device detection is False
             dev_check_dict[key] = not has_exception
-            # print("\r\ncheck_ex_th_state", key, is_temp_up, log_dict[key])
             sub_val = (
                 second_val - first_val
             )  #! A positive value (2>1) when heated and a negative value (2<1) when cooled.
@@ -185,7 +233,14 @@ class DevInfo:
                 "th 2 sub 1 val: " + "{:.2f}".format(sub_val),
                 "first th: " + str(first_val),
                 "second th: " + str(second_val),
+                "vol info: " + str(vol_dict[key]),
             )
+            # Output debugging information
+            GlobalLogger.debug_print(
+                "\r\ncheck_ex_th_state", key, is_temp_up, log_dict[key]
+            )
+            GlobalLogger.log("\r\ncheck_ex_th_state", key, is_temp_up, log_dict[key])
+
         if has_exception:
             raise TestFailureException(dev_check_dict, log_dict)
 

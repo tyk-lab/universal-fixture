@@ -375,7 +375,7 @@ class TestRun(QWidget):
             rows_info.append([col0, col1, col2, col3])
             log.add_log_entry(key, col0, col1, col2, col3)
 
-        GlobalLogger.log("\r\nfixtrue test result")
+        GlobalLogger.log("\r\n ========= fixtrue test result  ========= \r\n")
         GlobalLogger.log(key)
         rows_info_str = "\r\n".join(" ".join(row) for row in rows_info)
         GlobalLogger.log(rows_info_str)

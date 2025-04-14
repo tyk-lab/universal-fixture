@@ -71,6 +71,7 @@ class DevTest:
         for item in self.dev_dicts[key]:
             if result_dict != None:
                 result = result_dict[item]
+            if log_dict != None:
                 log = log_dict[item]
 
             color = GlobalComm.err_color
@@ -175,8 +176,8 @@ class DevTest:
             try:
                 if self.dev_dicts[key] != []:
                     GlobalLogger.divider_head_log("comm_th")
-                    fixture_dict = self.dev.req_th_state(self.fixture, False)
-                    self.dev.check_th_state(key, fixture_dict)
+                    fixture_dict = self.dev.req_th_info(self.fixture, False)
+                    self.dev.check_th(key, fixture_dict)
                     self.show_result(key)
             except TestFailureException as e:
                 self._test_failture_exception(e, key)
@@ -194,21 +195,36 @@ class DevTest:
 
         key = "extruder"
         other_key = "heater_bed"
+        vol_fixture_dict = {}
         if klipper_state and fixture_state:
             try:
                 if self.dev_dicts[key] != [] or self.dev_dicts[other_key]:
                     GlobalLogger.divider_head_log("extruder_th or heater_bed_th")
 
+                    ##################### init part #######################
+                    vol_init_dict = self.req_vol_info(self.fixture, True, True)
+                    vol_fixture_dict["init"] = vol_init_dict
+                    vol_fixture_dict["init_th"] = self.req_th_info(self.fixture, True)
+
+                    ##################### heat part #######################
                     first_dict, second_dict = self.dev.control_heating_cooling(
                         self.fixture, True
                     )
-                    self.dev.check_ex_th_state(first_dict, second_dict, True)
+                    vol_heat_dict = self.req_vol_info(self.fixture, True, True)
+                    vol_fixture_dict["heat"] = vol_heat_dict
+                    self.dev.check_ex_th(first_dict, second_dict, vol_heat_dict, True)
 
+                    ##################### cooling part #######################
                     first_dict, second_dict = self.dev.control_heating_cooling(
                         self.fixture, False
                     )
-                    self.dev.check_ex_th_state(first_dict, second_dict, False)
-                    self.show_keys_result((key, other_key))
+                    vol_cooling_dict = self.req_vol_info(self.fixture, True, True)
+                    vol_fixture_dict["cooling"] = vol_cooling_dict
+                    self.dev.check_ex_th(
+                        first_dict, second_dict, vol_cooling_dict, False
+                    )
+
+                    self.show_keys_result((key, other_key), str(vol_fixture_dict))
             except TestFailureException as e:
                 self._test_keys_failture_exception(e, (key, other_key))
         else:
