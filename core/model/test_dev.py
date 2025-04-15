@@ -25,7 +25,15 @@ class DevTest:
             "extruder": [],
             "neopixel ": [],
             # "adxl345": [],  # This won't read in klipper.
+            # "lis2dw12": [],  # This won't read in klipper.
         }
+
+        self.fields_to_check = {
+            "adxl345": False,
+            "lis2dw": False,
+        }
+        # Tuple meaning: whether to initialise once, whether to find the key value
+        self.fields_checked_tuple = (False, False)
 
         self.klipper = klipper
         self.fixture = fixtrue
@@ -337,18 +345,35 @@ class DevTest:
 
     ############################## adxl345 Equipment Related ############################
 
-    def test_adxl345(self, dialog, signal):
-        klipper_state = self.klipper.is_connect(False)
-        key = "adxl345"
+    def test_accel(self, cfg_path, dialog, signal):
+        from core.utils.parse_cfg_file import check_config_field
+        from core.utils.opt_log import GlobalLogger
 
-        if klipper_state and self.dev_dicts[key] != []:
-            cur = GlobalComm.setting_json["cur_test_cfg_file"]
-            if self.klipper.get_info(key) != {}:
-                dialog.set_title_name(key)
-                dialog.set_check_fun(
-                    self.dev.check_adxl345_state, self.show_sigle_result
+        GlobalLogger.divider_head_log("accel")
+        klipper_state = self.klipper.is_connect(False)
+
+        if klipper_state:
+            init_check, fields_check = self.fields_checked_tuple
+            GlobalLogger.debug_print(
+                self.test_accel.__name__,
+                "fields_checked_tuple: ",
+                self.fields_checked_tuple,
+            )
+            if not init_check:
+                self.fields_checked_tuple = check_config_field(
+                    cfg_path, self.fields_to_check
                 )
-                signal.emit()
+
+            elif fields_check:
+                for key, value in self.fields_to_check.items():
+                    if value:
+                        dialog.set_title_name(key)
+                        dialog.set_check_fun(
+                            self.dev.check_accel_state, self.show_sigle_result
+                        )
+                        signal.emit()
+        else:
+            self._raise_connect_exception(klipper_state, False)
 
     ############################## motor Equipment Related ############################
 

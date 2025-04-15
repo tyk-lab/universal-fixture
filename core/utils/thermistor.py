@@ -70,7 +70,9 @@ class Thermistor:
         )
         if self.c3 <= 0.0:
             beta = ln_r13 / inv_t13
-            GlobalLogger.debug_print(f"calc beta is  {beta}")
+            GlobalLogger.debug_print(
+                self.setup_coefficients.__name__, f"calc beta is  {beta}"
+            )
             self.setup_coefficients_beta(t1, r1, beta)
             return
         self.c2 = (inv_t12 - self.c3 * ln3_r12) / ln_r12
@@ -142,7 +144,10 @@ class CustomThermistor:
             self.thermistor.setup_coefficients_beta(
                 params["t1"], params["r1"], params["beta"]
             )
-            GlobalLogger.debug_print("use beta to set temp")
+            GlobalLogger.debug_print(
+                self._init_printer_thermistor.__name__,
+                "setup_coefficients_beta: use beta val",
+            )
         else:
             self.thermistor.setup_coefficients(
                 params["t1"],
@@ -152,7 +157,10 @@ class CustomThermistor:
                 params["t3"],
                 params["r3"],
             )
-            GlobalLogger.debug_print("calculate beta value to set temp")
+            GlobalLogger.debug_print(
+                self._init_printer_thermistor.__name__,
+                "setup_coefficients: calc beta val",
+            )
 
     def get_temp(self, adc_val):
         adc_max_range = 4095.0

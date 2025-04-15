@@ -48,7 +48,7 @@ class DevInfo:
         has_exception = not all(value is state for value in dev_check_dict.values())
         log_dict = {}
 
-        # Throw an exception if something goes wrong
+        # ok if the device value and the effect of the control are the same
         if has_exception:
             for key, value in dev_check_dict.items():
                 log_dict[key] = (
@@ -141,7 +141,7 @@ class DevInfo:
         dev_check_dict = {}
         has_exception = False
         check_cnt = 0
-        # Equipment Comparison Fixture Values
+        # Ok if the temperature sensing value is about the same as the fixture value and is in the room temperature range.
         for key, value in dev_dict.items():
             fixture_val = float(fixture_dict[key])
 
@@ -239,7 +239,7 @@ class DevInfo:
             if check_cnt < 2:
                 has_exception = True
 
-            # There is an abnormality, and the result of the device detection is False
+            # Heating or cooling, voltage changes as required and temperature sensing value will change then it is ok
             dev_check_dict[key] = not has_exception
             sub_val = (
                 second_val - first_val
@@ -374,6 +374,7 @@ class DevInfo:
                     "set: " + set_color + " | fixture color: " + str(fixture_color_dict)
                 )
 
+                # Pass if greater than tolerance
                 dev_check_dict[key] = True
                 if set_color != "white":
                     if not (fixture_color_dict[set_color] >= tolerance):
@@ -393,33 +394,40 @@ class DevInfo:
 
     ############################## adxl345 Equipment Related ############################
 
-    def check_adxl345_state(self, inaccuracies=1000):
+    def check_accel_state(self):
         from core.utils.exception.ex_test import TestFailureException
+        from core.utils.common import GlobalComm
 
         if self.klipper.is_connect(False):
-            cur_val = self.klipper.accelerometer_run()
+            inaccuracies = float(GlobalComm.setting_json["accel_inaccuracies"])
+            cur_accel_vals = self.klipper.accelerometer_run()
+            prev_accel_result = list(self.prev_val)
 
-            cur = list(map(float, cur_val.split(", ")))
-            cur = [round(num, 3) for num in cur]
+            # Converting a string to a list of floating point numbers
+            cur_accel_result = list(map(float, cur_accel_vals.split(", ")))
+            cur_accel_result = [round(num, 3) for num in cur_accel_result]
 
-            prev = list(self.prev_val)
-
-            differences = [abs(cur[j] - prev[j]) for j in range(3)]
+            # Round the last difference to 3 decimal places.
+            differences = [
+                abs(cur_accel_result[j] - prev_accel_result[j]) for j in range(3)
+            ]
             differences = [round(num, 3) for num in differences]
 
-            self.prev_val = cur
+            # Determine whether the current differential meets the test requirements
             test_result = all(diff > inaccuracies for diff in differences)
-            # 结果，标准偏差， 差异值, 当前的标准值
-            return (test_result, inaccuracies, differences, cur)
+            self.prev_val = cur_accel_result
+
+            # Result: Standard deviation, Difference, Current standard value
+            return (test_result, inaccuracies, differences, cur_accel_result)
 
         raise TestFailureException()
 
-    # todo, 测试adxl345使用
+    # todo, Testing the use of adxl345
     # def check_adxl345_state(self, inaccuracies=30):
     #     print("check_adxl345_state")
     #     import random
 
-    #     # 结果，差异值, 当前的标准值,
+    #     # Result, Difference value, Current standard value,
     #     return (True, 200, [3, 3, 3], [3, random.random(), random.random()])
 
     ############################## motor Equipment Related ############################

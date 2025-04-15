@@ -33,7 +33,6 @@ from core.model.test_dev import DevTest
 from core.ui.table import CustomTableView
 from core.model.klipperpy import KlipperService
 from core.model.printer_cfg import PrinterConfig
-from core.utils.parse_cfg_file import check_config_field
 
 
 class TestRun(QWidget):
@@ -81,14 +80,6 @@ class TestRun(QWidget):
             mode_list["sigle"]: self.sigle_test,
             mode_list["power"]: self.power_test,
         }
-
-        #! Check if the target field exists in the configuration file
-        # Used to filter the modules that must be tested during testing
-        key = "adxl345"
-        self.fields_to_check = {
-            "adxl345": False,
-        }
-        self.fields_to_check[key] = check_config_field(self.cfg_path, key)
 
     def init_ui(self):
         self.setWindowTitle(GlobalComm.get_langdic_val("view", "test_tile"))
@@ -254,7 +245,9 @@ class TestRun(QWidget):
         serial_id = "\n".join(self.last_result)
         GlobalLogger.log(serial_id)
         GlobalLogger.log("connect Successful")
-        GlobalLogger.debug_print("connect Successful", serial_id)
+        GlobalLogger.debug_print(
+            self.klipper_connect_task.__name__, "connect Successful", serial_id
+        )
         log = web_state["state_message"] + "    " + "\r\n"
         raw_data = [
             GlobalComm.get_langdic_val("view", "test_result_ok"),
@@ -345,18 +338,16 @@ class TestRun(QWidget):
     def exec_fixture_test(self):
         self.fixture.init_fixture()
         self.dev_test.init_model()
-
-        if self.fields_to_check["adxl345"] is True:
-            self.dev_test.test_adxl345(
-                self.time_check_dialog, self.start_timer_dialog_signal
-            )
-
+        self.dev_test.test_accel(
+            self.cfg_path, self.time_check_dialog, self.start_timer_dialog_signal
+        )
         self.dev_test.test_rgbw()
         # self.dev_test.test_fan()
         # self.dev_test.test_btn()
         # self.dev_test.test_comm_th()
         # self.dev_test.test_heat()
         # self.dev_test.test_motor()
+
         self.save_test_result()
 
     def save_test_result(self):

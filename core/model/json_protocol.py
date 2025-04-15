@@ -55,7 +55,7 @@ def receive_and_parse_frame(ser):
             if len(data) == data_size:
                 # Try to parse to JSON
                 json_data = json.loads(data.decode("utf-8"))
-                GlobalLogger.debug_print("收到JSON数据：", json_data)
+                GlobalLogger.debug_print("recv JSON:", json_data)
                 GlobalLogger.log("send_command_and_format_result:" + str(json_data))
                 return json_data
             else:

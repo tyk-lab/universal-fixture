@@ -59,7 +59,7 @@ class FixtureInfo:
         if self.serial_dev == None:
             self.serial_dev = serial.Serial(self.serial_port, 9600, timeout=1)
 
-        GlobalLogger.debug_print("init_fixture re_init", re_init)
+        GlobalLogger.debug_print(self.init_fixture.__name__, "re_init", re_init)
         if re_init:
             if self.sync_dev(FrameType.Sync) == None:
                 raise TestConnectException()

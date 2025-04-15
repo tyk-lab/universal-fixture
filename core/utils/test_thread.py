@@ -37,10 +37,12 @@ class TestThread(QThread):
             serial.serialutil.SerialException
         ) as e:  # Passing on errors during testing
             err = str(e)
-            GlobalLogger.debug_print("serial exceptions：", err)
+            GlobalLogger.debug_print(self.run.__name__, "serial exceptions：", err)
             self.error_occurred.emit(" try closs window, reopen\r\nserial err:", str(e))
         except TestConnectException as e:
-            GlobalLogger.debug_print("fixture_test Connect exceptions：", e.message)
+            GlobalLogger.debug_print(
+                self.run.__name__, "fixture_test Connect exceptions：", e.message
+            )
             self.error_occurred.emit("fixture_test Connect err: ", e.message)
         except Exception as e:
             traceback_msg = traceback.format_exc()

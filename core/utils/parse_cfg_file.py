@@ -58,12 +58,15 @@ def parse_cfg_flash_info(file_path):
     # print(f"File Suffix: {file_suffix}")
 
 
-def check_config_field(config_path, field):
+#! Find out if the keyword information exists in the configuration file.
+def check_config_field(config_path, fields_dict):
     if not isinstance(config_path, str) or not config_path:
-        return False
+        return False, False
 
     with open(config_path, "r", encoding="utf-8") as f:
         for line in f:
-            if field in line:
-                return True
-    return False
+            for key in fields_dict:
+                if key in line:
+                    fields_dict[key] = True
+                    return True, True
+    return False, True
