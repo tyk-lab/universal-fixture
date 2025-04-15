@@ -66,6 +66,8 @@ class DevInfo:
     ############################## th Equipment Related ############################
 
     def req_th_info(self, fixture, is_fields_key):
+        from core.utils.exception.ex_test import TestReplyException
+
         """Get the value of th temperature in the fixture
 
         Args.
@@ -85,7 +87,9 @@ class DevInfo:
         if result_dict != None:
             for key, value in result_dict.items():
                 result_dict[key] = self.thermistor.get_temp(float(value))
-        return result_dict
+            return result_dict
+
+        raise TestReplyException(self.req_th_info.__name__ + ": fixture reply null")
 
     def get_th_info(self, klipper_key, is_fields_key):
         """Get the value of temperature sensing
@@ -141,11 +145,11 @@ class DevInfo:
         for key, value in dev_dict.items():
             fixture_val = float(fixture_dict[key])
 
-            # Two comparisons. Big difference.
+            # 1. Two comparisons. Big difference.
             if value < fixture_val + tolerance and value > fixture_val - tolerance:
                 check_cnt += 1
 
-            # In the normal temperature range
+            # 2. In the normal temperature range
             if lower_bound <= value <= upper_bound:
                 check_cnt += 1
 
@@ -170,6 +174,8 @@ class DevInfo:
     ############################## vol Equipment Related ############################
 
     def req_vol_info(self, fixture, is_fields_key, is_verbose):
+        from core.utils.exception.ex_test import TestReplyException
+
         # todo, 获取电压，电流，功耗信息，待验证
         fields_frame_info, comm_frame_info = fixture.extract_fields_between_keys(
             "volSQ"
@@ -181,8 +187,12 @@ class DevInfo:
             FrameType.Request, "volSQ", frame_info
         )
 
-        if result_dict != None and not is_verbose:
-            result_dict = {k: v.split(",")[0].strip() for k, v in result_dict.items()}
+        if result_dict == None:
+            raise TestReplyException(
+                self.req_vol_info.__name__ + ": fixture reply null"
+            )
+        elif not is_verbose:
+            result_dict = {k: v.split(",")[1].strip() for k, v in result_dict.items()}
 
         print("req_vol_info: ", result_dict)
         return result_dict
@@ -210,16 +220,31 @@ class DevInfo:
         log_dict = {}
         dev_check_dict = {}
         has_exception = False
+        check_cnt = 0
         for key, value in first_dict.items():
             first_val = float(first_dict[key])
             second_val = float(second_dict[key])
 
-            # If it does not match the expected heating or cooling effect, there is an abnormality
-            has_exception = not (
-                second_val > first_val + tolerance
-                if is_temp_up
-                else first_val > second_val + tolerance
-            )
+            # 1. If it does not match the expected heating or cooling effect, there is an abnormality
+            if is_temp_up and second_val > first_val + tolerance:
+                check_cnt += 1
+            elif is_temp_up == False and first_val > second_val + tolerance:
+                check_cnt += 1
+            else:
+                check_cnt = 0
+
+            # 2. Judging whether voltage is output when heating
+            info_parts = vol_dict[key].split(",")[1]
+            cur_vol = float(info_parts.strip())
+            if is_temp_up and 20 <= cur_vol <= 24:
+                check_cnt += 1
+            elif is_temp_up == False and 0 <= cur_vol <= 1:
+                check_cnt += 1
+            else:
+                check_cnt = 0
+
+            if check_cnt < 2:
+                has_exception = True
 
             # There is an abnormality, and the result of the device detection is False
             dev_check_dict[key] = not has_exception
@@ -233,13 +258,14 @@ class DevInfo:
                 "th 2 sub 1 val: " + "{:.2f}".format(sub_val),
                 "first th: " + str(first_val),
                 "second th: " + str(second_val),
+                "check cnt:" + str(check_cnt),
                 "vol info: " + str(vol_dict[key]),
             )
             # Output debugging information
             GlobalLogger.debug_print(
-                "\r\ncheck_ex_th_state", key, is_temp_up, log_dict[key]
+                "check_ex_th_state", key, is_temp_up, log_dict[key]
             )
-            GlobalLogger.log("\r\ncheck_ex_th_state", key, is_temp_up, log_dict[key])
+            GlobalLogger.log("check_ex_th_state", key, is_temp_up, log_dict[key])
 
         if has_exception:
             raise TestFailureException(dev_check_dict, log_dict)

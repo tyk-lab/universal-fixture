@@ -114,6 +114,9 @@ class DevTest:
             "fixture state " + str(fixture_state),
         )
 
+    def _test_keys_failture_exception(self, key_tuple, result, message):
+        self.show_keys_result(key_tuple, message, result)
+
     def _test_keys_failture_exception(self, e, key_tuple):
         """If the test fails, go here to display an exception message
 
@@ -164,6 +167,7 @@ class DevTest:
 
     def test_comm_th(self):
         from core.utils.opt_log import GlobalLogger
+        from core.utils.exception.ex_test import TestReplyException
         from core.utils.exception.ex_test import (
             TestFailureException,
         )
@@ -181,11 +185,15 @@ class DevTest:
                     self.show_result(key)
             except TestFailureException as e:
                 self._test_failture_exception(e, key)
+            except TestReplyException as e:
+                for item in self.dev_dicts[key]:
+                    self.show_sigle_result(item, False, e.message)
         else:
             self._raise_connect_exception(klipper_state, fixture_state)
 
     def test_extruder_th(self):
         from core.utils.opt_log import GlobalLogger
+        from core.utils.exception.ex_test import TestReplyException
         from core.utils.exception.ex_test import (
             TestFailureException,
         )
@@ -202,31 +210,37 @@ class DevTest:
                     GlobalLogger.divider_head_log("extruder_th or heater_bed_th")
 
                     ##################### init part #######################
-                    vol_init_dict = self.req_vol_info(self.fixture, True, True)
-                    vol_fixture_dict["init"] = vol_init_dict
-                    vol_fixture_dict["init_th"] = self.req_th_info(self.fixture, True)
+                    vol_init_dict = self.dev.req_vol_info(self.fixture, True, True)
+                    init_th_dict = self.dev.req_th_info(self.fixture, True)
 
                     ##################### heat part #######################
                     first_dict, second_dict = self.dev.control_heating_cooling(
                         self.fixture, True
                     )
-                    vol_heat_dict = self.req_vol_info(self.fixture, True, True)
-                    vol_fixture_dict["heat"] = vol_heat_dict
+                    vol_heat_dict = self.dev.req_vol_info(self.fixture, True, True)
                     self.dev.check_ex_th(first_dict, second_dict, vol_heat_dict, True)
 
                     ##################### cooling part #######################
                     first_dict, second_dict = self.dev.control_heating_cooling(
                         self.fixture, False
                     )
-                    vol_cooling_dict = self.req_vol_info(self.fixture, True, True)
-                    vol_fixture_dict["cooling"] = vol_cooling_dict
+                    vol_cooling_dict = self.dev.req_vol_info(self.fixture, True, True)
                     self.dev.check_ex_th(
                         first_dict, second_dict, vol_cooling_dict, False
                     )
 
-                    self.show_keys_result((key, other_key), str(vol_fixture_dict))
+                    ##################### show result #######################
+                    vol_fixture_dict["vol"] = (
+                        "init vol: " + str(vol_init_dict),
+                        "init th: " + str(init_th_dict),
+                        "cooling vol" + str(vol_cooling_dict),
+                        "heat vol" + str(vol_heat_dict),
+                    )
+                    self.show_keys_result((key, other_key), vol_fixture_dict)
             except TestFailureException as e:
                 self._test_keys_failture_exception(e, (key, other_key))
+            except TestReplyException as e:
+                self._test_keys_failture_exception((key, other_key), False, e.message)
         else:
             self._raise_connect_exception(klipper_state, fixture_state)
 

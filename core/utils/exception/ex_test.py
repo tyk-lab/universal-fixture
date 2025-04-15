@@ -56,6 +56,18 @@ class TestConnectException(TestResultException):
         super().__init__(message, *args, **kwargs)
 
 
+class TestReplyException(TestResultException):
+    """Test data frame exception, used to indicate that the test has not passed"""
+
+    def __init__(
+        self,
+        message=GlobalComm.get_langdic_val("excep_test", "test_frame"),
+        *args,
+        **kwargs
+    ):
+        super().__init__(message, *args, **kwargs)
+
+
 class TestFrameException(TestResultException):
     """Test data frame exception, used to indicate that the test has not passed"""
 

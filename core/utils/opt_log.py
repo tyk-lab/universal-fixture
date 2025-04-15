@@ -27,7 +27,7 @@ class GlobalLogger:
         cls.log_file_path = os.path.join(date_dir, "test_opt.log")
 
     @classmethod
-    def log(cls, message):
+    def log(cls, message, *args, **kwargs):
         # Ensure that the log file path is initialised
         if cls.log_file_path is None:
             cls.initialize()
@@ -35,8 +35,7 @@ class GlobalLogger:
         # Message append to log file
         current_time = datetime.now().time().strftime("%H:%M:%S")
         with open(cls.log_file_path, "a", encoding="utf-8") as log_file:
-            log_file.write(current_time + ":" + message + "\n")
-        # print(f"Logged: {message}")
+            print(f"{current_time}:", message, *args, **kwargs, file=log_file)
 
     @classmethod
     def debug_print(*args, **kwargs):
