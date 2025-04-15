@@ -210,7 +210,7 @@ class DevInfo:
         second_fixture_dict = self.req_th_info(fixture, True)
         return first_fixture_dict, second_fixture_dict
 
-    def check_ex_th(self, first_dict, second_dict, vol_dict, is_temp_up):
+    def check_heat(self, first_dict, second_dict, vol_dict, is_temp_up):
         from core.utils.exception.ex_test import TestFailureException
         from core.utils.common import GlobalComm
         from core.utils.opt_log import GlobalLogger
@@ -263,9 +263,9 @@ class DevInfo:
             )
             # Output debugging information
             GlobalLogger.debug_print(
-                "check_ex_th_state", key, is_temp_up, log_dict[key]
+                self.check_heat.__name__, key, is_temp_up, log_dict[key]
             )
-            GlobalLogger.log("check_ex_th_state", key, is_temp_up, log_dict[key])
+            GlobalLogger.log(self.check_heat.__name__, key, is_temp_up, log_dict[key])
 
         if has_exception:
             raise TestFailureException(dev_check_dict, log_dict)
@@ -436,29 +436,6 @@ class DevInfo:
         for key, pulses in fixture_dict.items():
             log_dict[key] = "  cur pulses:  " + str(pulses) + tip
             if pulses <= a_loop_pulses_up and pulses >= a_loop_pulses_down:
-                result_dict[key] = True
-            else:
-                result_dict[key] = False
-                has_exception = True
-
-        if has_exception:
-            raise TestFailureException(result_dict, log_dict)
-
-    def run_heats(self, enalbe):
-        self.klipper.run_test_gcode("_TEST_HEATS RUN=" + enalbe)
-
-    def check_heats_state(self, init_temp_dict, next_temp_dict):
-        from core.utils.exception.ex_test import TestFailureException
-
-        log_dict = {}
-        result_dict = {}
-
-        # 判定结果
-        for key, value in init_temp_dict.items():
-            log_dict[key] = (
-                "  init temp:  " + str(value) + "next temp: " + str(next_temp_dict[key])
-            )
-            if value > next_temp_dict[key]:
                 result_dict[key] = True
             else:
                 result_dict[key] = False

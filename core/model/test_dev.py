@@ -139,6 +139,8 @@ class DevTest:
         log_dict = e.args[1]
         self.show_result(key, log_dict, result_dict)
 
+    ############################## btn Equipment Related ############################
+
     def test_btn(self):
         from core.utils.opt_log import GlobalLogger
         from core.utils.exception.ex_test import (
@@ -164,6 +166,8 @@ class DevTest:
                 self._test_failture_exception(e, key)
         else:
             self._raise_connect_exception(klipper_state, fixture_state)
+
+    ############################## th Equipment Related ############################
 
     def test_comm_th(self):
         from core.utils.opt_log import GlobalLogger
@@ -191,7 +195,9 @@ class DevTest:
         else:
             self._raise_connect_exception(klipper_state, fixture_state)
 
-    def test_extruder_th(self):
+    ############################## heat Equipment Related ############################
+
+    def test_heat(self):
         from core.utils.opt_log import GlobalLogger
         from core.utils.exception.ex_test import TestReplyException
         from core.utils.exception.ex_test import (
@@ -207,7 +213,7 @@ class DevTest:
         if klipper_state and fixture_state:
             try:
                 if self.dev_dicts[key] != [] or self.dev_dicts[other_key]:
-                    GlobalLogger.divider_head_log("extruder_th or heater_bed_th")
+                    GlobalLogger.divider_head_log("extruder or heater_bed heat")
 
                     ##################### init part #######################
                     vol_init_dict = self.dev.req_vol_info(self.fixture, True, True)
@@ -218,14 +224,14 @@ class DevTest:
                         self.fixture, True
                     )
                     vol_heat_dict = self.dev.req_vol_info(self.fixture, True, True)
-                    self.dev.check_ex_th(first_dict, second_dict, vol_heat_dict, True)
+                    self.dev.check_heat(first_dict, second_dict, vol_heat_dict, True)
 
                     ##################### cooling part #######################
                     first_dict, second_dict = self.dev.control_heating_cooling(
                         self.fixture, False
                     )
                     vol_cooling_dict = self.dev.req_vol_info(self.fixture, True, True)
-                    self.dev.check_ex_th(
+                    self.dev.check_heat(
                         first_dict, second_dict, vol_cooling_dict, False
                     )
 
@@ -243,6 +249,8 @@ class DevTest:
                 self._test_keys_failture_exception((key, other_key), False, e.message)
         else:
             self._raise_connect_exception(klipper_state, fixture_state)
+
+    ############################## fan Equipment Related ############################
 
     def test_fan(self):
         klipper_state = self.klipper.is_connect(False)
@@ -273,6 +281,8 @@ class DevTest:
         else:
             # todo,更新治具状态
             self._raise_connect_exception(klipper_state, False)
+
+    ############################## rgbw Equipment Related ############################
 
     def test_rgbw(self):
         klipper_state = self.klipper.is_connect(False)
@@ -316,6 +326,8 @@ class DevTest:
             # todo,更新治具状态
             self._raise_connect_exception(klipper_state, False)
 
+    ############################## adxl345 Equipment Related ############################
+
     def test_adxl345(self, dialog, signal):
         klipper_state = self.klipper.is_connect(False)
         key = "adxl345"
@@ -328,6 +340,8 @@ class DevTest:
                     self.dev.check_adxl345_state, self.show_sigle_result
                 )
                 signal.emit()
+
+    ############################## motor Equipment Related ############################
 
     def test_motor(self):
         klipper_state = self.klipper.is_connect(False)
