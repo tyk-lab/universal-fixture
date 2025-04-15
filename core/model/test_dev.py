@@ -253,7 +253,9 @@ class DevTest:
     ############################## rgbw Equipment Related ############################
 
     def test_rgbw(self):
+        from core.utils.opt_log import GlobalLogger
 
+        GlobalLogger.divider_head_log("rgbw")
         klipper_state = self.klipper.is_connect(False)
         fixture_state = self.fixture.is_connect(True)
 
@@ -269,33 +271,37 @@ class DevTest:
                     }
                 """
                 if self.dev_dicts[key] != []:
+
                     # Test Red
-                    set_val = "red"
-                    color_dict = self.dev.run_rgbw(set_val)
-                    self.dev.check_rgbw_state(color_dict, fixture_dict)
+                    set_color = "red"
+                    self.dev.run_rgbw(set_color)
+                    fixture_dict = self.dev.req_rgb_raw_val(self.fixture)
+                    self.dev.check_rgbw_state(set_color, fixture_dict)
 
                     # Test Blue
-                    set_val = "blue"
-                    color_dict = self.dev.run_rgbw(set_val)
-                    self.dev.check_rgbw_state(color_dict, fixture_dict)
+                    set_color = "blue"
+                    self.dev.run_rgbw(set_color)
+                    fixture_dict = self.dev.req_rgb_raw_val(self.fixture)
+                    self.dev.check_rgbw_state(set_color, fixture_dict)
 
                     # Test Green
-                    set_val = "green"
-                    color_dict = self.dev.run_rgbw(set_val)
-                    self.dev.check_rgbw_state(color_dict, fixture_dict)
+                    set_color = "green"
+                    self.dev.run_rgbw(set_color)
+                    fixture_dict = self.dev.req_rgb_raw_val(self.fixture)
+                    self.dev.check_rgbw_state(set_color, fixture_dict)
 
                     # Test White
-                    set_val = "white"
-                    color_dict = self.dev.run_rgbw(set_val)
-                    self.dev.check_rgbw_state(color_dict, fixture_dict)
+                    set_color = "white"
+                    self.dev.run_rgbw(set_color)
+                    fixture_dict = self.dev.req_rgb_raw_val(self.fixture)
+                    self.dev.check_rgbw_state(set_color, fixture_dict)
 
                     self.show_result(key)
                     return
             except Exception as e:
                 self._test_failture_exception(e, key)
         else:
-            # todo,更新治具状态
-            self._raise_connect_exception(klipper_state, False)
+            self._raise_connect_exception(klipper_state, fixture_state)
 
     ############################## fan Equipment Related ############################
 

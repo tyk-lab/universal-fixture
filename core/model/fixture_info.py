@@ -125,6 +125,8 @@ class FixtureInfo:
         Sending control commands and receiving relevant data
         frame_type: class FrameType(IntEnum)Related Data
         dev_type: btnSV, fanSQ, device class in protocol (on key in port's json file)
+        frame_dict: custom frame dictionary information, not from dev_frame_dict,
+                    corresponds to port fields start_heat_th - end_heat_th
         """
 
         if frame_dict != None:

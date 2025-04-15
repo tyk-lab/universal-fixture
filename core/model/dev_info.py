@@ -323,12 +323,25 @@ class DevInfo:
         }
         if key in color_dict:
             color_dict[key] = "1.0"
-
         self.klipper.run_test_gcode(
-            f"TEST_RGBWS RED={color_dict['red']} GREEN={color_dict['green']} BLUE={color_dict['blue']} WHITE={color_dict['white']}"
+            f"_TEST_RGBWS RED={color_dict['red']} GREEN={color_dict['green']} BLUE={color_dict['blue']} WHITE={color_dict['white']}"
         )
 
-        return color_dict
+    def req_rgb_raw_val(self, fixture):
+        from core.utils.exception.ex_test import TestReplyException
+
+        result_dict = fixture.send_command_and_format_result(
+            FrameType.Request, "rgbwSQ"
+        )
+        if result_dict != None:
+            rgb_raw_max = 255
+            for key, value in result_dict.items():
+                result_dict[key] = [
+                    round(float(val.strip()) / rgb_raw_max, 2)
+                    for val in value.split(",")
+                ]
+            return result_dict
+        raise TestReplyException(self.req_th_info.__name__ + ": fixture reply null")
 
     def get_rgbw_state(self):
         key = "neopixel "
@@ -339,43 +352,44 @@ class DevInfo:
                 result_dict[key] = value
         return result_dict
 
-    def check_rgbw_state(self, set_color_dict, fixture_dict):
+    def check_rgbw_state(self, set_color, fixture_dict):
         from core.utils.exception.ex_test import TestFailureException
 
-        dev_dict = self.get_rgbw_state()
         log_dict = {}
-        tolerance = 0.2
-
-        # print("check_rgbw_state")
+        dev_check_dict = {}
         has_exception = False
 
-        # 定义检测的颜色顺序
-        color_order = ["red", "green", "blue", "white"]
+        #! Define the data format of the sensor, consistent with the data returned by the fixture.
+        color_order = ["red", "green", "blue"]
+        dev_dict = self.get_rgbw_state()
+        tolerance = 0.8
 
-        # 判定结果
         for key in dev_dict.keys():
-            rgb_values = fixture_dict[key].split(", ")
-            # 组合对应治具数据为元组，方便颜色匹对
-            fixture_key_zip = zip(color_order, rgb_values)
-            log_dict[key] = (
-                "fixture color: "
-                + str(fixture_dict[key])
-                + "  cur "
-                + str(set_color_dict)
-            )
+            if key in fixture_dict:
+                # Format and combine the colour data to output something like: {'blue': 33, 'green': 33, 'red': 33}
+                rgb_value_list = fixture_dict[key]
+                fixture_color_dict = dict(zip(color_order, rgb_value_list))
 
-            dev_dict[key] = True
-            for color, fixture_val in fixture_key_zip:
-                # print(key, "  ", color)
-                if not float(fixture_val) >= float(set_color_dict[color]) - tolerance:
-                    dev_dict[key] = False
-                    has_exception = True
-                    break
+                log_dict[key] = (
+                    "set: " + set_color + " | fixture color: " + str(fixture_color_dict)
+                )
 
-            # print("\r\n")
-
+                dev_check_dict[key] = True
+                if set_color != "white":
+                    if not (fixture_color_dict[set_color] >= tolerance):
+                        dev_check_dict[key] = False
+                        has_exception = True
+                else:
+                    for value in fixture_color_dict.values():
+                        if not (value >= tolerance):
+                            dev_check_dict[key] = False
+                            has_exception = True
+                            break
+            else:  # Devices that do not participate in the detection, directly default ok
+                dev_check_dict[key] = True
+                log_dict[key] = "No testing"
         if has_exception:
-            raise TestFailureException(dev_dict, log_dict)
+            raise TestFailureException(dev_check_dict, log_dict)
 
     ############################## adxl345 Equipment Related ############################
 
