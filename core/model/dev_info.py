@@ -146,7 +146,7 @@ class DevInfo:
             fixture_val = float(fixture_dict[key])
 
             # 1. Two comparisons. Big difference.
-            if value < fixture_val + tolerance and value > fixture_val - tolerance:
+            if fixture_val - tolerance <= value <= fixture_val + tolerance:
                 check_cnt += 1
 
             # 2. In the normal temperature range
@@ -158,15 +158,12 @@ class DevInfo:
                 dev_check_dict[key] = False
 
             log_dict[key] = (
-                "tolerance: "
-                + str(tolerance)
-                + "\r\nfixture th: "
-                + str(fixture_val)
-                + " dev th: "
-                + str(value)
-                + "\r\ncheck part cnt"
-                + str(check_cnt)
+                "normal_temp range: " + str(normal_temp_range),
+                "fixture th: " + str(fixture_val),
+                "dev th: " + str(value),
+                "check cnt:" + str(check_cnt),
             )
+            check_cnt = 0
 
         if has_exception:
             raise TestFailureException(dev_check_dict, log_dict)
@@ -230,8 +227,6 @@ class DevInfo:
                 check_cnt += 1
             elif is_temp_up == False and first_val > second_val + tolerance:
                 check_cnt += 1
-            else:
-                check_cnt = 0
 
             # 2. Judging whether voltage is output when heating
             info_parts = vol_dict[key].split(",")[1]
@@ -240,8 +235,6 @@ class DevInfo:
                 check_cnt += 1
             elif is_temp_up == False and 0 <= cur_vol <= 1:
                 check_cnt += 1
-            else:
-                check_cnt = 0
 
             if check_cnt < 2:
                 has_exception = True
@@ -258,7 +251,7 @@ class DevInfo:
                 "th 2 sub 1 val: " + "{:.2f}".format(sub_val),
                 "first th: " + str(first_val),
                 "second th: " + str(second_val),
-                "check cnt:" + str(check_cnt),
+                "check cnt: " + str(check_cnt),
                 "vol info: " + str(vol_dict[key]),
             )
             # Output debugging information
@@ -266,6 +259,7 @@ class DevInfo:
                 self.check_heat.__name__, key, is_temp_up, log_dict[key]
             )
             GlobalLogger.log(self.check_heat.__name__, key, is_temp_up, log_dict[key])
+            check_cnt = 0
 
         if has_exception:
             raise TestFailureException(dev_check_dict, log_dict)
@@ -348,7 +342,7 @@ class DevInfo:
     def check_rgbw_state(self, set_color_dict, fixture_dict):
         from core.utils.exception.ex_test import TestFailureException
 
-        result_dict = self.get_rgbw_state()
+        dev_dict = self.get_rgbw_state()
         log_dict = {}
         tolerance = 0.2
 
@@ -359,7 +353,7 @@ class DevInfo:
         color_order = ["red", "green", "blue", "white"]
 
         # 判定结果
-        for key in result_dict.keys():
+        for key in dev_dict.keys():
             rgb_values = fixture_dict[key].split(", ")
             # 组合对应治具数据为元组，方便颜色匹对
             fixture_key_zip = zip(color_order, rgb_values)
@@ -370,18 +364,18 @@ class DevInfo:
                 + str(set_color_dict)
             )
 
-            result_dict[key] = True
+            dev_dict[key] = True
             for color, fixture_val in fixture_key_zip:
                 # print(key, "  ", color)
                 if not float(fixture_val) >= float(set_color_dict[color]) - tolerance:
-                    result_dict[key] = False
+                    dev_dict[key] = False
                     has_exception = True
                     break
 
             # print("\r\n")
 
         if has_exception:
-            raise TestFailureException(result_dict, log_dict)
+            raise TestFailureException(dev_dict, log_dict)
 
     ############################## adxl345 Equipment Related ############################
 

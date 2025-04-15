@@ -355,9 +355,8 @@ class TestRun(QWidget):
         # self.dev_test.test_fan()
         self.dev_test.test_btn()
         self.dev_test.test_comm_th()
-        self.dev_test.test_extruder_th()
+        self.dev_test.test_heat()
         # self.dev_test.test_motor()
-        # self.dev_test.test_heats()
         self.save_test_result()
 
     def save_test_result(self):
