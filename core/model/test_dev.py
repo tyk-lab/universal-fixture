@@ -252,8 +252,10 @@ class DevTest:
                     )
                     self.show_keys_result((key, other_key), vol_fixture_dict)
             except TestFailureException as e:
+                self.dev.reset_klipper_state()
                 self._test_keys_failture_exception(e, (key, other_key))
             except TestReplyException as e:
+                self.dev.reset_klipper_state()
                 self._test_keys_failture_exception((key, other_key), False, e.message)
         else:
             self._raise_connect_exception(klipper_state, fixture_state)
@@ -263,7 +265,6 @@ class DevTest:
     def test_rgbw(self):
         from core.utils.opt_log import GlobalLogger
 
-        GlobalLogger.divider_head_log("rgbw")
         klipper_state = self.klipper.is_connect(False)
         fixture_state = self.fixture.is_connect(True)
 
@@ -279,6 +280,7 @@ class DevTest:
                     }
                 """
                 if self.dev_dicts[key] != []:
+                    GlobalLogger.divider_head_log("rgbw")
 
                     # Test Red
                     set_color = "red"
@@ -314,36 +316,41 @@ class DevTest:
     ############################## fan Equipment Related ############################
 
     def test_fan(self):
+        from core.utils.opt_log import GlobalLogger
+
         klipper_state = self.klipper.is_connect(False)
+        fixture_state = self.fixture.is_connect(True)
+
         key = "fan_generic "
-        if klipper_state:
+        sample_time = 1  # second
+        wait_klipper_time = 4.3
+        if klipper_state and fixture_state:
             try:
                 if self.dev_dicts[key] != []:
-                    # 让所有风扇旋转
+                    GlobalLogger.divider_head_log("fan")
                     set_val = "0.8"
-                    self.dev.run_fan(set_val)
-                    # # todo, 获取万能板中非三线的风速
-                    # # 设返回的数据格式：{'fan2': 0.0, 'fan3': 0.0}
-                    fixture_dict = {"PCF": 0.0, "HEF": 0.0}
+                    self.dev.run_fan(set_val, wait_klipper_time)
+                    fixture_dict = self.dev.req_fan_info(self.fixture, sample_time)
                     self.dev.check_fan_state(set_val, fixture_dict)
 
-                    set_val = "0.2"
-                    self.dev.run_fan(set_val)
+                    set_val = "0.3"
+                    self.dev.run_fan(set_val, wait_klipper_time)
+                    fixture_dict = self.dev.req_fan_info(self.fixture, sample_time)
                     self.dev.check_fan_state(set_val, fixture_dict)
 
                     set_val = "0"
-                    self.dev.run_fan(set_val)
+                    self.dev.run_fan(set_val, wait_klipper_time)
+                    fixture_dict = self.dev.req_fan_info(self.fixture, sample_time)
                     self.dev.check_fan_state(set_val, fixture_dict)
 
                     self.show_result(key)
-                    return
             except Exception as e:
+                self.dev.reset_klipper_state()
                 self._test_failture_exception(e, key)
         else:
-            # todo,更新治具状态
-            self._raise_connect_exception(klipper_state, False)
+            self._raise_connect_exception(klipper_state, fixture_state)
 
-    ############################## adxl345 Equipment Related ############################
+    ############################## accel Equipment Related ############################
 
     def test_accel(self, cfg_path, dialog, signal):
         from core.utils.parse_cfg_file import check_config_field

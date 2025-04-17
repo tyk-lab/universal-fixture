@@ -32,10 +32,12 @@ class FixtureInfo:
             if dev_module != None:
                 for dev_name, port in items.items():
                     # Skip special labelling information
-                    if dev_name == "default_val":
+                    if dev_name == "default_val":  # Specify default values
                         need_send_value = port
                         continue
-                    if "start" in dev_name or "end" in dev_name:
+                    if (
+                        "start" in dev_name or "end" in dev_name
+                    ):  # Used to split list blocks, but utility modules
                         continue
                     key_json = build_key_json(port, dev_name, need_send_value)
                     frame_info[dev_module].append(key_json)
@@ -83,8 +85,11 @@ class FixtureInfo:
             self.dev_frame_dict = {}
             self.serial_dev = None
 
-    def _wait_fixture_reply(self):
+    def _wait_fixture_reply(self, mast_wait_second=None):
         wait_time_cnt = 0
+
+        if mast_wait_second != None:
+            time.sleep(mast_wait_second)
         while True:
             wait_time_cnt += 1
             if self.serial_dev.in_waiting:
@@ -120,7 +125,9 @@ class FixtureInfo:
         send_json_frame(self.serial_dev, frame_type, self.dev_frame_dict[dev_type])
         # time.sleep(0.1)
 
-    def send_command_and_format_result(self, frame_type, dev_type, frame_dict=None):
+    def send_command_and_format_result(
+        self, frame_type, dev_type, frame_dict=None, mast_wait_second=None
+    ):
         """
         Sending control commands and receiving relevant data
         frame_type: class FrameType(IntEnum)Related Data
@@ -133,7 +140,7 @@ class FixtureInfo:
             send_json_frame(self.serial_dev, frame_type, frame_dict)
         else:
             send_json_frame(self.serial_dev, frame_type, self.dev_frame_dict[dev_type])
-        reply = self._wait_fixture_reply()
+        reply = self._wait_fixture_reply(mast_wait_second)
         if reply != None:
             return self._format_reply_info(reply)
         return None

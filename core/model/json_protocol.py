@@ -20,6 +20,7 @@ class FrameType(IntEnum):
     Request = 2
     Sync = 3
     Shucdown = 4
+    Poll = 5
 
 
 def build_key_json(port, dev_name, value=None):

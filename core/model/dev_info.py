@@ -194,6 +194,48 @@ class DevInfo:
         print("req_vol_info: ", result_dict)
         return result_dict
 
+    ############################## other Equipment Related ############################
+
+    def reset_klipper_state(self):
+        self.run_heat("0")
+        self.run_fan("0")
+
+    def _wait_dev_signal_reply(self, fixture, dev_type, sample_time, dev_dict):
+        """Waiting for a reply to a Poll type message
+
+        Args:
+            fixture (_type_): checker handle
+            dev_type (_type_): Detection type
+            sample_time (_type_): second, mcu unit is millisecond
+            dev_dict (_type_): device dictionary
+
+        Returns:
+            _type_: Gauge Polling Signal Results
+        """
+        fan_ppr = 2
+        mcu_sample_time = sample_time * 1000
+        frame = {
+            dev_type: [{"port": "0", "name": dev_type, "value": str(mcu_sample_time)}],
+        }
+        result_dict = fixture.send_command_and_format_result(
+            FrameType.Poll, dev_type, frame, sample_time
+        )
+
+        if result_dict != None and "ok" in str(result_dict):
+            result_dict = fixture.send_command_and_format_result(
+                FrameType.Request, dev_type
+            )
+
+            # For second-line fans, the air velocity is calculated by means of a jig.
+            for key, value in dev_dict.items():
+                if value == None:
+                    freq = int(result_dict[key]) / mcu_sample_time
+                    # References fan.py in klipper: line 99 and pulse_counter.py, pulse_counter.c
+                    result_dict[key] = freq * 30.0 / fan_ppr
+
+            return result_dict
+        return None
+
     ############################## heat Equipment Related ############################
 
     def run_heat(self, value):
@@ -203,7 +245,7 @@ class DevInfo:
         first_fixture_dict = self.req_th_info(fixture, True)
         time.sleep(1)
         self.run_heat("1" if is_temp_up else "0")
-        time.sleep(5)
+        time.sleep(5)  # Wait for the heater to stabilise
         second_fixture_dict = self.req_th_info(fixture, True)
         return first_fixture_dict, second_fixture_dict
 
@@ -266,6 +308,12 @@ class DevInfo:
 
     ############################## fan Equipment Related ############################
 
+    def req_fan_info(self, fixture, sample_time):
+        return self._wait_dev_signal_reply(
+            fixture, "fanSQ", sample_time, self.get_fan_state()
+        )
+
+    # !If it is not a three-wire fan, value["rpm"] returns None
     def get_fan_state(self):
         key = "fan_generic "
         result_dict = {}
@@ -275,34 +323,43 @@ class DevInfo:
                 result_dict[key] = value["rpm"]
         return result_dict
 
-    def run_fan(self, value):
+    def run_fan(self, value, wait_time=0):
         self.klipper.run_test_gcode("_TEST_FANS FAN_SPEED=" + value)
+        time.sleep(wait_time)  # Wait for the wind to stabilise
 
     def check_fan_state(self, set_val, fixture_dict):
         from core.utils.exception.ex_test import TestFailureException
+        from core.utils.common import GlobalComm
 
-        # todo, 需要校正
-        expected_rpm = {
-            "0": 0,
-            "0.2": 2400,
-            "0.8": 8000,
-        }
-        tolerance = 500  # todo
-
+        expected_rpm = GlobalComm.setting_json["expected_fan_rpm"]
+        tolerance = tolerance = float(GlobalComm.setting_json["fan_check_tolerance"])
         has_exception = False
-        result_dict = self.get_fan_state()
-        # print(result_dict)
-        log_dict = {}
-        # 判定结果
-        for key, value in result_dict.items():
-            cur_valid_val = value if value != None else fixture_dict[key]
-            cur_valid_val = round(cur_valid_val, 3)
 
-            # print(cur_valid_val)
-            log_dict[key] = "  cur rpm:  " + str(cur_valid_val)
+        log_dict = {}
+        result_dict = {}
+        dev_dict = self.get_fan_state()
+
+        cur_valid_val = 0
+        for key, value in dev_dict.items():
+            # Dealing with the co-existence of second and third line fans
+            if value != None:
+                cur_valid_val = value
+            elif fixture_dict != None:
+                cur_valid_val = fixture_dict[key]
+            else:
+                #!Something went wrong, couldn't read the value of the fixture (fixture/device, always read one)
+                cur_valid_val = -1
+                has_exception = True
+
+            cur_valid_val = round(cur_valid_val, 3)
+            log_dict[key] = (
+                "expect rpm: " + expected_rpm[set_val],
+                " cur rpm: " + str(cur_valid_val),
+                " fixture state: " + str(cur_valid_val >= 0),
+            )
             if (
-                cur_valid_val < expected_rpm[set_val] + tolerance
-                and cur_valid_val > expected_rpm[set_val] - tolerance
+                cur_valid_val < float(expected_rpm[set_val]) + tolerance
+                and cur_valid_val > float(expected_rpm[set_val]) - tolerance
             ):
                 result_dict[key] = True
             else:

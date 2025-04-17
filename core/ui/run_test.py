@@ -342,10 +342,10 @@ class TestRun(QWidget):
             self.cfg_path, self.time_check_dialog, self.start_timer_dialog_signal
         )
         self.dev_test.test_rgbw()
-        # self.dev_test.test_fan()
-        # self.dev_test.test_btn()
-        # self.dev_test.test_comm_th()
-        # self.dev_test.test_heat()
+        self.dev_test.test_fan()
+        self.dev_test.test_btn()
+        self.dev_test.test_comm_th()
+        self.dev_test.test_heat()
         # self.dev_test.test_motor()
 
         self.save_test_result()
@@ -365,7 +365,7 @@ class TestRun(QWidget):
             rows_info.append([col0, col1, col2, col3])
             log.add_log_entry(key, col0, col1, col2, col3)
 
-        GlobalLogger.log("\r\n ========= fixtrue test result  ========= \r\n")
+        GlobalLogger.divider_head_log(" == fixtrue test result ==  ")
         GlobalLogger.log(key)
         rows_info_str = "\r\n".join(" ".join(row) for row in rows_info)
         GlobalLogger.log(rows_info_str)
