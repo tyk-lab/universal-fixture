@@ -162,7 +162,7 @@ class DevTest:
         if klipper_state and fixture_state:
             try:
                 if self.dev_dicts[key] != []:
-                    GlobalLogger.divider_head_log("test_btn")
+                    GlobalLogger.divider_head_log(key)
                     self.dev.otp_btn_state(self.fixture, "1")
                     self.dev.check_btn_state(key, True)
 
@@ -191,7 +191,7 @@ class DevTest:
         if klipper_state and fixture_state:
             try:
                 if self.dev_dicts[key] != []:
-                    GlobalLogger.divider_head_log("comm_th")
+                    GlobalLogger.divider_head_log(key)
                     fixture_dict = self.dev.req_th_info(self.fixture, False)
                     self.dev.check_th(key, fixture_dict)
                     self.show_result(key)
@@ -264,6 +264,9 @@ class DevTest:
 
     def test_rgbw(self):
         from core.utils.opt_log import GlobalLogger
+        from core.utils.exception.ex_test import (
+            TestFailureException,
+        )
 
         klipper_state = self.klipper.is_connect(False)
         fixture_state = self.fixture.is_connect(True)
@@ -280,7 +283,7 @@ class DevTest:
                     }
                 """
                 if self.dev_dicts[key] != []:
-                    GlobalLogger.divider_head_log("rgbw")
+                    GlobalLogger.divider_head_log(key)
 
                     # Test Red
                     set_color = "red"
@@ -308,7 +311,7 @@ class DevTest:
 
                     self.show_result(key)
                     return
-            except Exception as e:
+            except TestFailureException as e:
                 self._test_failture_exception(e, key)
         else:
             self._raise_connect_exception(klipper_state, fixture_state)
@@ -317,6 +320,9 @@ class DevTest:
 
     def test_fan(self):
         from core.utils.opt_log import GlobalLogger
+        from core.utils.exception.ex_test import (
+            TestFailureException,
+        )
 
         klipper_state = self.klipper.is_connect(False)
         fixture_state = self.fixture.is_connect(True)
@@ -327,7 +333,7 @@ class DevTest:
         if klipper_state and fixture_state:
             try:
                 if self.dev_dicts[key] != []:
-                    GlobalLogger.divider_head_log("fan")
+                    GlobalLogger.divider_head_log(key)
                     set_val = "0.8"
                     self.dev.run_fan(set_val, wait_klipper_time)
                     fixture_dict = self.dev.req_fan_info(self.fixture, sample_time)
@@ -344,7 +350,7 @@ class DevTest:
                     self.dev.check_fan_state(set_val, fixture_dict)
 
                     self.show_result(key)
-            except Exception as e:
+            except TestFailureException as e:
                 self.dev.reset_klipper_state()
                 self._test_failture_exception(e, key)
         else:
@@ -385,58 +391,45 @@ class DevTest:
     ############################## motor Equipment Related ############################
 
     def test_motor(self):
-        klipper_state = self.klipper.is_connect(False)
-        key = "extruder"
+        from core.utils.opt_log import GlobalLogger
+        from core.utils.exception.ex_test import (
+            TestFailureException,
+            TestReplyException,
+        )
 
-        if klipper_state:
+        klipper_state = self.klipper.is_connect(False)
+        fixture_state = self.fixture.is_connect(True)
+
+        key = "extruder"
+        motor_run_time = 4
+        if klipper_state and fixture_state:
             try:
                 if self.dev_dicts[key] != []:
-                    # todo, 通知万能板采集脉冲
-                    self.dev.run_motor(True)
-                    # todo, 获取万能板采集的脉冲
-                    fixture_dict = {"a": 3000, "b": 3000}
-                    self.dev.check_motor_distance(fixture_dict)
+                    GlobalLogger.divider_head_log(key)
+                    if self.dev_dicts[key][0] == "":
+                        self.dev_dicts[key][0] = key
 
-                    # todo, 通知万能板采集脉冲
-                    self.dev.run_motor(False)
-                    # todo, 获取万能板采集的脉冲
-                    self.dev.check_motor_distance(fixture_dict)
+                    #  Positive motor rotation
+                    self.dev.run_monitoring(key, self.fixture, True)
+                    val_dict_1, dir_dict_1 = self.dev.req_encoder_info(
+                        key, self.fixture, motor_run_time
+                    )
+                    self.dev.check_motor_distance(val_dict_1)
 
+                    # motor reversal
+                    self.dev.run_monitoring(key, self.fixture, False)
+                    val_dict_2, dir_dict_2 = self.dev.req_encoder_info(
+                        key, self.fixture, motor_run_time
+                    )
+                    self.dev.check_motor_distance(val_dict_2)
+
+                    # Inspection Direction
+                    self.check_motor_dir(dir_dict_1, dir_dict_2)
                     self.show_result(key)
-                    return
-            except Exception as e:
+            except TestFailureException as e:
                 self._test_failture_exception(e, key)
+            except TestReplyException as e:
+                for item in self.dev_dicts[key]:
+                    self.show_sigle_result(item, False, e.message)
         else:
-            # todo,更新治具状态
-            self._raise_connect_exception(klipper_state, False)
-
-    def test_heats(self):
-        klipper_state = self.klipper.is_connect(False)
-        key = "extruder"
-        other_key = "heater_bed"
-
-        if klipper_state:
-            try:
-                # todo
-                if self.dev_dicts[key] != []:
-                    # todo, 获取万能板的初始温度值
-                    self.dev.run_heats(True)
-                    fixture_dict = {
-                        "a": 3000,
-                        "b": 3000,
-                    }  # todo, 区分同事有无两个key，看反馈
-                    # todo，获取万能板当前温度值
-                    self.dev.check_heats_state(fixture_dict)
-                    self.show_result(key)
-
-                if self.dev_dicts[other_key] != []:
-                    self.dev.run_heats(False)
-                    self.dev.check_heats_state(fixture_dict)
-                    self.show_result(other_key)
-
-                return
-            except Exception as e:
-                self._test_failture_exception(e, key)
-        else:
-            # todo,更新治具状态
-            self._raise_connect_exception(klipper_state, False)
+            self._raise_connect_exception(klipper_state, fixture_state)

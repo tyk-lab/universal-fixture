@@ -332,7 +332,7 @@ class DevInfo:
         from core.utils.common import GlobalComm
 
         expected_rpm = GlobalComm.setting_json["expected_fan_rpm"]
-        tolerance = tolerance = float(GlobalComm.setting_json["fan_check_tolerance"])
+        tolerance = float(GlobalComm.setting_json["fan_check_tolerance"])
         has_exception = False
 
         log_dict = {}
@@ -350,6 +350,7 @@ class DevInfo:
                 #!Something went wrong, couldn't read the value of the fixture (fixture/device, always read one)
                 cur_valid_val = -1
                 has_exception = True
+                raise TestFailureException(result_dict, log_dict)
 
             cur_valid_val = round(cur_valid_val, 3)
             log_dict[key] = (
@@ -398,7 +399,7 @@ class DevInfo:
                     for val in value.split(",")
                 ]
             return result_dict
-        raise TestReplyException(self.req_th_info.__name__ + ": fixture reply null")
+        raise TestReplyException(self.req_rgb_raw_val.__name__ + ": fixture reply null")
 
     def get_rgbw_state(self):
         key = "neopixel "
@@ -489,30 +490,100 @@ class DevInfo:
 
     ############################## motor Equipment Related ############################
 
+    def run_monitoring(self, dev_type, fixture, dir):
+        frame = {
+            dev_type: [{"port": "0", "name": dev_type, "value": "1"}],
+        }
+        fixture.send_command(FrameType.Poll, dev_type, frame)
+        time.sleep(0.5)
+        self.run_motor(dir)
+
+    def req_encoder_info(self, dev_type, fixture, run_time_s):
+        time.sleep(run_time_s)
+        return self._stop_wait_dev_encoder_reply(dev_type, fixture)
+
+    def _split_result_dict(self, original_dict):
+        val_dict = {}
+        dir_dict = {}
+        for key, value in original_dict.items():
+            parts = value.split(", ")
+            if len(parts) == 2:
+                val_dict[key] = parts[0]
+                dir_dict[key] = parts[1]
+        return val_dict, dir_dict
+
+    def _stop_wait_dev_encoder_reply(self, dev_type, fixture):
+        from core.utils.exception.ex_test import TestReplyException
+
+        frame = {
+            dev_type: [{"port": "0", "name": dev_type, "value": "0"}],
+        }
+        result_dict = fixture.send_command_and_format_result(
+            FrameType.Poll, dev_type, frame
+        )
+
+        if result_dict != None and "ok" in str(result_dict):
+            result_dict = fixture.send_command_and_format_result(
+                FrameType.Request, dev_type
+            )
+            self._split_result_dict(result_dict)
+
+        raise TestReplyException(
+            self._stop_wait_dev_encoder_reply.__name__ + ": fixture reply null"
+        )
+
+    def req_motor_info(self, fixture, sample_time):
+        return self._wait_dev_signal_reply(
+            fixture, "motorSQ", sample_time, self.get_fan_state()
+        )
+
     def run_motor(self, dir):
         self.klipper.run_test_gcode("_TEST_MOTOR_A_LOOP DIR=" + dir)
 
-    # 脉冲值格式 {"a": 3000, "b": 3000, ...}
     def check_motor_distance(self, fixture_dict):
         from core.utils.exception.ex_test import TestFailureException
+        from core.utils.common import GlobalComm
 
         # todo, 设一圈的脉冲数为 200*16*40=128000
-        tolerance = 300
         stander_pulses = 128000
+        tolerance = float(GlobalComm.setting_json["motor_encoder_tolerance"])
         log_dict = {}
         result_dict = {}
+        has_exception = False
+
         a_loop_pulses_up = stander_pulses + tolerance
         a_loop_pulses_down = stander_pulses + tolerance
-
         tip = "stander: " + str(stander_pulses) + " tolerance: " + str(tolerance)
-        # 判定结果
         for key, pulses in fixture_dict.items():
+            val = float(pulses)
             log_dict[key] = "  cur pulses:  " + str(pulses) + tip
-            if pulses <= a_loop_pulses_up and pulses >= a_loop_pulses_down:
+            if a_loop_pulses_down <= val <= a_loop_pulses_up:
                 result_dict[key] = True
             else:
                 result_dict[key] = False
                 has_exception = True
+
+        if has_exception:
+            raise TestFailureException(result_dict, log_dict)
+
+    def check_motor_dir(self, dir_dict_1, dir_dict_2):
+        from core.utils.exception.ex_test import TestFailureException
+
+        check_cnt = 0
+        if len(set(dir_dict_1.values())) == 1:
+            check_cnt += 1
+
+        if dir_dict_1 == dir_dict_2:
+            check_cnt += 1
+
+        has_exception = check_cnt >= 2
+
+        # Produce exception information
+        log_dict = {}
+        result_dict = {}
+        for key, dir in dir_dict_1.items():
+            log_dict[key] = "directional inconsistency"
+            result_dict[key] = False
 
         if has_exception:
             raise TestFailureException(result_dict, log_dict)

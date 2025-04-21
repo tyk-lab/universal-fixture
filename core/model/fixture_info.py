@@ -115,11 +115,15 @@ class FixtureInfo:
             fixture_dict.update(sub_dict)
         return fixture_dict
 
-    def send_command(self, frame_type, dev_type, value):
+    def send_command(self, frame_type, dev_type, value="0", frame_dict=None):
         """
         Only applicable to keys with "V" device type.
         """
         # GlobalLogger.debug_print("dev_frame_dict:\r\n", self.dev_frame_dict)
+        if frame_dict != None:
+            send_json_frame(self.serial_dev, frame_type, frame_dict)
+            return
+
         for dev in self.dev_frame_dict[dev_type].get(dev_type, []):
             dev["value"] = value
         send_json_frame(self.serial_dev, frame_type, self.dev_frame_dict[dev_type])
