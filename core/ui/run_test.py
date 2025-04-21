@@ -389,6 +389,10 @@ class TestRun(QWidget):
             self.open_web_control()
 
     def power_test(self):
+        if self.power_path == None or self.power_path == "":
+            self.dialog.show_warning("not found power_cfg file in open location")
+            return
+
         if self.update_product_cfg(True, self.power_path):
             GlobalLogger.divider_head_log("power test")
             self.creat_timer_test(self.power_test_result)
