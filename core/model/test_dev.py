@@ -23,6 +23,7 @@ class DevTest:
             "output_pin ": [],
             "heater_bed": [],
             "extruder": [],
+            "extruder_stepper ": [],
             "neopixel ": [],
             # "adxl345": [],  # This won't read in klipper.
             # "lis2dw12": [],  # This won't read in klipper.
@@ -400,26 +401,29 @@ class DevTest:
         klipper_state = self.klipper.is_connect(False)
         fixture_state = self.fixture.is_connect(True)
 
-        key = "extruder"
-        motor_run_time = 4
+        check_key = "extruder"
+        key = "extruder_stepper "
+        poll_key = "motorSQ"
+        motor_run_time = 3
         if klipper_state and fixture_state:
             try:
-                if self.dev_dicts[key] != []:
-                    GlobalLogger.divider_head_log(key)
-                    if self.dev_dicts[key][0] == "":
-                        self.dev_dicts[key][0] = key
+                if self.dev_dicts[check_key] != []:
+                    GlobalLogger.divider_head_log(check_key)
+                    # 多电机运动必定存在 extruder电机, 含有 extruder 字段
+                    if "extruder" not in self.dev_dicts[key]:
+                        self.dev_dicts[key].append("extruder")
 
                     #  Positive motor rotation
-                    self.dev.run_monitoring(key, self.fixture, True)
+                    self.dev.run_monitoring(poll_key, self.fixture, True)
                     val_dict_1, dir_dict_1 = self.dev.req_encoder_info(
-                        key, self.fixture, motor_run_time
+                        poll_key, self.fixture, motor_run_time
                     )
                     self.dev.check_motor_distance(val_dict_1)
 
                     # motor reversal
-                    self.dev.run_monitoring(key, self.fixture, False)
+                    self.dev.run_monitoring(poll_key, self.fixture, False)
                     val_dict_2, dir_dict_2 = self.dev.req_encoder_info(
-                        key, self.fixture, motor_run_time
+                        poll_key, self.fixture, motor_run_time
                     )
                     self.dev.check_motor_distance(val_dict_2)
 

@@ -115,7 +115,7 @@ class FixtureInfo:
             fixture_dict.update(sub_dict)
         return fixture_dict
 
-    def send_command(self, frame_type, dev_type, value="0", frame_dict=None):
+    def send_command(self, frame_type, dev_type, value, frame_dict=None):
         """
         Only applicable to keys with "V" device type.
         """

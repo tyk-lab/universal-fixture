@@ -494,13 +494,12 @@ class DevInfo:
         frame = {
             dev_type: [{"port": "0", "name": dev_type, "value": "1"}],
         }
-        fixture.send_command(FrameType.Poll, dev_type, frame)
+        fixture.send_command(FrameType.Poll, dev_type, "1", frame)
         time.sleep(0.5)
         self.run_motor(dir)
 
     def req_encoder_info(self, dev_type, fixture, run_time_s):
-        time.sleep(run_time_s)
-        return self._stop_wait_dev_encoder_reply(dev_type, fixture)
+        return self._stop_wait_dev_encoder_reply(fixture, dev_type, run_time_s)
 
     def _split_result_dict(self, original_dict):
         val_dict = {}
@@ -512,28 +511,28 @@ class DevInfo:
                 dir_dict[key] = parts[1]
         return val_dict, dir_dict
 
-    def _stop_wait_dev_encoder_reply(self, dev_type, fixture):
+    def _stop_wait_dev_encoder_reply(self, fixture, dev_type, sample_time):
         from core.utils.exception.ex_test import TestReplyException
 
         frame = {
             dev_type: [{"port": "0", "name": dev_type, "value": "0"}],
         }
         result_dict = fixture.send_command_and_format_result(
-            FrameType.Poll, dev_type, frame
+            FrameType.Poll, dev_type, frame, sample_time
         )
 
         if result_dict != None and "ok" in str(result_dict):
             result_dict = fixture.send_command_and_format_result(
                 FrameType.Request, dev_type
             )
-            self._split_result_dict(result_dict)
+            return self._split_result_dict(result_dict)
 
         raise TestReplyException(
             self._stop_wait_dev_encoder_reply.__name__ + ": fixture reply null"
         )
 
     def run_motor(self, dir):
-        self.klipper.run_test_gcode("_TEST_MOTOR_A_LOOP DIR=" + dir)
+        self.klipper.run_test_gcode("_TEST_MOTOR_A_LOOP DIR=" + "1" if dir else "0")
 
     def check_motor_distance(self, fixture_dict):
         from core.utils.exception.ex_test import TestFailureException
@@ -548,7 +547,7 @@ class DevInfo:
 
         a_loop_pulses_up = stander_pulses + tolerance
         a_loop_pulses_down = stander_pulses + tolerance
-        tip = "stander: " + str(stander_pulses) + " tolerance: " + str(tolerance)
+        tip = " stander: " + str(stander_pulses) + " tolerance: " + str(tolerance)
         for key, pulses in fixture_dict.items():
             val = float(pulses)
             log_dict[key] = "  cur pulses:  " + str(pulses) + tip
