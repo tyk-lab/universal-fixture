@@ -338,14 +338,14 @@ class TestRun(QWidget):
     def exec_fixture_test(self):
         self.fixture.init_fixture()
         self.dev_test.init_model()
-        # self.dev_test.test_accel(
-        #     self.cfg_path, self.time_check_dialog, self.start_timer_dialog_signal
-        # )
-        # self.dev_test.test_rgbw()
-        # self.dev_test.test_fan()
-        # self.dev_test.test_btn()
-        # self.dev_test.test_comm_th()
-        # self.dev_test.test_heat()
+        self.dev_test.test_accel(
+            self.cfg_path, self.time_check_dialog, self.start_timer_dialog_signal
+        )
+        self.dev_test.test_rgbw()
+        self.dev_test.test_fan()
+        self.dev_test.test_btn()
+        self.dev_test.test_comm_th()
+        self.dev_test.test_heat()
         self.dev_test.test_motor()
 
         self.save_test_result()

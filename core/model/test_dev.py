@@ -216,6 +216,8 @@ class DevTest:
         klipper_state = self.klipper.is_connect(False)
         fixture_state = self.fixture.is_connect(True)
 
+        # !Doesn't get the key field from the klipper,
+        # !currently just marks it as the same and displays the result independently (_test_keys_failture_exception)
         key = "extruder"
         other_key = "heater_bed"
         vol_fixture_dict = {}
