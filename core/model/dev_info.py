@@ -581,3 +581,8 @@ class DevInfo:
 
         if has_exception:
             raise TestFailureException(result_dict, log_dict)
+
+    ############################## other Equipment Related ############################
+
+    def run_other(self, run):
+        self.klipper.run_test_gcode("_TEST_OTHER RUN=" + "1" if run else "0")

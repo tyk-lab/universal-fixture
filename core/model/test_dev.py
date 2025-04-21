@@ -25,6 +25,7 @@ class DevTest:
             "extruder": [],
             "extruder_stepper ": [],
             "neopixel ": [],
+            "output_pin ": [],
             # "adxl345": [],  # This won't read in klipper.
             # "lis2dw12": [],  # This won't read in klipper.
         }
@@ -410,7 +411,7 @@ class DevTest:
         if klipper_state and fixture_state:
             try:
                 if self.dev_dicts[check_key] != []:
-                    GlobalLogger.divider_head_log(check_key)
+                    GlobalLogger.divider_head_log(check_key + " motor")
                     # 多电机运动必定存在 extruder电机, 含有 extruder 字段
                     if "extruder" not in self.dev_dicts[key]:
                         self.dev_dicts[key].append("extruder")
@@ -439,3 +440,11 @@ class DevTest:
                     self.show_sigle_result(item, False, e.message)
         else:
             self._raise_connect_exception(klipper_state, fixture_state)
+
+    ############################## other Equipment Related ############################
+
+    def test_other(self):
+        # todo, currently just controlling the klipper, looking at the status, not in the fixture detection
+        self.dev.run_other(True)
+        time.sleep(1)
+        self.dev.run_other(False)
