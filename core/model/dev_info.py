@@ -532,11 +532,6 @@ class DevInfo:
             self._stop_wait_dev_encoder_reply.__name__ + ": fixture reply null"
         )
 
-    def req_motor_info(self, fixture, sample_time):
-        return self._wait_dev_signal_reply(
-            fixture, "motorSQ", sample_time, self.get_fan_state()
-        )
-
     def run_motor(self, dir):
         self.klipper.run_test_gcode("_TEST_MOTOR_A_LOOP DIR=" + dir)
 
