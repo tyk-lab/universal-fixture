@@ -434,16 +434,23 @@ class DevInfo:
 
                 # Pass if greater than tolerance
                 dev_check_dict[key] = True
+                check_color_index = 0
+                # 1. Determine if only one colour value meets the criteria
+                for value in fixture_color_dict.values():
+                    if not (value >= tolerance):
+                        check_color_index += 1
+
+                # 2. Determination of compliance with the criteria for colour values (white - non-white)
                 if set_color != "white":
-                    if not (fixture_color_dict[set_color] >= tolerance):
+                    if check_color_index != 1 or not (
+                        fixture_color_dict[set_color] >= tolerance
+                    ):
                         dev_check_dict[key] = False
                         has_exception = True
                 else:
-                    for value in fixture_color_dict.values():
-                        if not (value >= tolerance):
-                            dev_check_dict[key] = False
-                            has_exception = True
-                            break
+                    if not check_color_index >= 3:
+                        dev_check_dict[key] = False
+                        has_exception = True
             else:  # Devices that do not participate in the detection, directly default ok
                 dev_check_dict[key] = True
                 log_dict[key] = "No testing"

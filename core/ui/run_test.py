@@ -354,6 +354,7 @@ class TestRun(QWidget):
     def save_test_result(self):
         log = TestResultLog()
         key = self.line_edit.text().split("/")[-1]
+        head = "result      type         name                   bak"
 
         rows_info = []
         for row in range(self.table_model.rowCount()):
@@ -369,7 +370,7 @@ class TestRun(QWidget):
         GlobalLogger.divider_head_log(" == fixtrue test result ==  ")
         GlobalLogger.log(key)
         rows_info_str = "\r\n".join(" ".join(row) for row in rows_info)
-        GlobalLogger.log(rows_info_str)
+        GlobalLogger.log("\r\n" + head + "\r\n" + rows_info_str)
         log.save_logs()
 
     def comm_test(self):
