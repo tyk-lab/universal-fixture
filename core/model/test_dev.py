@@ -444,7 +444,39 @@ class DevTest:
     ############################## other Equipment Related ############################
 
     def test_other(self):
+        from core.utils.opt_log import GlobalLogger
+
+        GlobalLogger.divider_head_log("test_other")
         # todo, currently just controlling the klipper, looking at the status, not in the fixture detection
         self.dev.run_other(True)
         time.sleep(1)
         self.dev.run_other(False)
+
+    ############################## vol Equipment Related ############################
+
+    def test_vol(self):
+        from core.utils.opt_log import GlobalLogger
+        from core.utils.exception.ex_test import (
+            TestFailureException,
+        )
+
+        fixture_state = self.fixture.is_connect(True)
+        key_tuple = ("3.3_vol", "5_vol", "24_vol")  #!Same name as the port file.
+        except_vol_dict = {
+            key_tuple[0]: 3.3,
+            key_tuple[1]: 5.0,
+            key_tuple[2]: 24.0,
+        }
+
+        if fixture_state:
+            try:
+                GlobalLogger.divider_head_log("test_vol")
+                vol_dict = self.dev.req_vol_info(self.fixture, False, False)
+                # Determine the actual voltage tested, reset the tuple value
+                key_tuple = tuple(item for item in key_tuple if item in vol_dict)
+                vol_fixture_dict = self.dev.check_vol(except_vol_dict, vol_dict)
+                self.show_keys_result(key_tuple, vol_fixture_dict)
+            except TestFailureException as e:
+                self._test_keys_failture_exception(e, key_tuple)
+        else:
+            self._raise_connect_exception(False, fixture_state)

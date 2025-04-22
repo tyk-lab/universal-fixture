@@ -194,6 +194,26 @@ class DevInfo:
         print("req_vol_info: ", result_dict)
         return result_dict
 
+    def check_vol(self, except_vol_dict, fixtur_dict):
+        from core.utils.exception.ex_test import TestFailureException
+
+        log_dict = {}
+        dev_check_dict = {}
+        has_exception = False
+        for key, value in fixtur_dict.items():
+            cur_vol = float(value)
+            log_dict[key] = "cur: " + value
+
+            if except_vol_dict[key] - 1.3 <= cur_vol <= except_vol_dict[key]:
+                dev_check_dict[key] = True
+            else:
+                dev_check_dict[key] = False
+                has_exception = True
+        if has_exception:
+            raise TestFailureException(dev_check_dict, log_dict)
+
+        return log_dict
+
     ############################## other Equipment Related ############################
 
     def reset_klipper_state(self):
