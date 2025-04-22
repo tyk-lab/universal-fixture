@@ -412,7 +412,7 @@ class DevTest:
             try:
                 if self.dev_dicts[check_key] != []:
                     GlobalLogger.divider_head_log(check_key + " motor")
-                    # 多电机运动必定存在 extruder电机, 含有 extruder 字段
+                    # Multi-motor motion must have extruder motor, contains extruder field
                     if "extruder" not in self.dev_dicts[key]:
                         self.dev_dicts[key].append("extruder")
 

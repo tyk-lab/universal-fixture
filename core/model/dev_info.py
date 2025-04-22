@@ -571,22 +571,20 @@ class DevInfo:
         from core.utils.exception.ex_test import TestFailureException
 
         check_cnt = 0
-        if len(set(dir_dict_1.values())) == 1:
+        if len(set(dir_dict_1.values())) == 1 and len(set(dir_dict_2.values())) == 1:
             check_cnt += 1
 
         if dir_dict_1 == dir_dict_2:
             check_cnt += 1
 
         has_exception = check_cnt >= 2
-
-        # Produce exception information
-        log_dict = {}
-        result_dict = {}
-        for key, dir in dir_dict_1.items():
-            log_dict[key] = "directional inconsistency"
-            result_dict[key] = False
-
         if has_exception:
+            # Make produce exception information
+            log_dict = {}
+            result_dict = {}
+            for key, dir in dir_dict_1.items():
+                log_dict[key] = "directional inconsistency"
+                result_dict[key] = False
             raise TestFailureException(result_dict, log_dict)
 
     ############################## other Equipment Related ############################
