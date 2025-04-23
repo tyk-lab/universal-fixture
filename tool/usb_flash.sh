@@ -73,6 +73,24 @@ fi
 output=$(sudo avrdude  $burn_args$FIRMWARE_PATH$end_args 2>&1)
 }
 
+
+flash_updi() {
+end_args=":i"
+burn_args="-c atmelice_isp   -v -p $MCU_TYPE -U flash:w:"
+
+if [ "$MCU_TYPE" == "attiny202" ]; then
+    echo "flash attiny202"
+else 
+    HAS_EXCEPT=1
+fi
+
+if [ $HAS_EXCEPT == 1 ]; then
+    err_tip
+fi
+output=$(sudo avrdude  $burn_args$FIRMWARE_PATH$end_args 2>&1)
+}
+
+
 flash_jlink() {
 $SCRIPT_DIR/jlink_flash.sh $FIRMWARE_PATH
 
@@ -100,6 +118,8 @@ elif [ "$BURN_METHOD" == "stlink" ]; then
     flash_stlink
 elif [ "$BURN_METHOD" == "jlink" ]; then
     flash_jlink
+elif [ "$BURN_METHOD" == "atmel_ice_updi" ]; then
+    flash_updi
 elif [ "$BURN_METHOD" == "serial_usb" ]; then
     flash_serial_usb
 elif [ "$BURN_METHOD" == "mount" ]; then
