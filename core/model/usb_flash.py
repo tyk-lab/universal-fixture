@@ -54,14 +54,14 @@ class UsbFlash:
         self.message_box.append("\r\n############################################\r\n")
         self.message_box.append(result)
 
-    def exec(self, mcu_type, file_path):
+    def exec(self, mcu_type, burn_method, file_path):
         """Perform usb burning
 
         Args:
             mcu_type (_type_): Types of mcu
             file_path (_type_): Firmware Path
         """
-        self.flash = Flash(mcu_type, file_path)
+        self.flash = Flash(mcu_type, burn_method, file_path)
         self.loading_git.init_loading_QFrame()
 
         # Calling threads to perform burn-in

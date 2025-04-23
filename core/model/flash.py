@@ -13,9 +13,10 @@ import sh
 
 class Flash:
 
-    def __init__(self, mcu_type, file_full_name):
+    def __init__(self, mcu_type, burn_method, file_full_name):
         self.usb_devs = GlobalComm.setting_json["support_dev"]
         self.file_path = file_full_name
+        self.burn_method = burn_method
         self.mcu_type = mcu_type.split("f")[0]
 
     # Check the key fields to judge the burn-in results
@@ -51,4 +52,6 @@ class Flash:
         return None
 
     def flash_device(self):
-        return sh.bash("tool/usb_flash.sh", self.mcu_type, self.file_path)
+        return sh.bash(
+            "tool/usb_flash.sh", self.mcu_type, self.burn_method, self.file_path
+        )

@@ -46,8 +46,9 @@ def parse_cfg_flash_info(file_path):
     board = test_info.get("boart")
     mcu = test_info.get("mcu")
     file_suffix = test_info.get("file_suffix")
+    burn_method = test_info.get("burn_method")
 
-    return board, mcu, file_suffix
+    return board, mcu, file_suffix, burn_method
 
     # Example call (debug)
     # board, mcu, file_suffix = parse_cfg_flash_info(

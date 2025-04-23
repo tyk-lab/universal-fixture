@@ -147,12 +147,12 @@ class MainWindow(QMainWindow):
         # Second row: Burn button and Test button
         action_layout = QHBoxLayout()
         burn_button = QPushButton(GlobalComm.get_langdic_val("view", "btn_burn"))
-        test_button = QPushButton(GlobalComm.get_langdic_val("view", "btn_test"))
+        self.test_button = QPushButton(GlobalComm.get_langdic_val("view", "btn_test"))
         action_layout.addWidget(burn_button)
-        action_layout.addWidget(test_button)
+        action_layout.addWidget(self.test_button)
 
         burn_button.clicked.connect(self.on_upload_firmware)
-        test_button.clicked.connect(self.on_test)
+        self.test_button.clicked.connect(self.on_test)
 
         # Third row and following: message box
         self.message_box = QTextEdit()
@@ -230,53 +230,68 @@ class MainWindow(QMainWindow):
             self.power_cfg_path = ""
             self.cfg_file_path = ""
 
-            cfg_files = [f for f in os.listdir(directory) if f.endswith(".cfg")]
-            cfg_file = [f for f in cfg_files if "test" in f]
-            if cfg_files == [] or cfg_file == []:
-                raise FileNotFoundCustomError("\r\ncfg_file not found: " + directory)
+            # Check to see if it's just a burn, no test needed
+            burn_path = os.path.join(directory, "only_burn.cfg")
+            print(burn_path)
+            self.test_button.setEnabled(False)
+            if not os.path.isfile(burn_path):
+                self.test_button.setEnabled(True)
+                cfg_files = [f for f in os.listdir(directory) if f.endswith(".cfg")]
+                cfg_file = [f for f in cfg_files if "test" in f]
+                if cfg_files == [] or cfg_file == []:
+                    raise FileNotFoundCustomError(
+                        "\r\ncfg_file not found: " + directory
+                    )
 
-            # Look for the port file in the directory
-            cur_test = GlobalComm.setting_json["cur_test_mode"]
-            port_file = [f for f in os.listdir(directory) if f.endswith(".json")]
-            if port_file == [] and cur_test == "fixture":
-                raise FileNotFoundCustomError("\r\nport_file not found: " + directory)
+                # Look for the port file in the directory
+                cur_test = GlobalComm.setting_json["cur_test_mode"]
+                port_file = [f for f in os.listdir(directory) if f.endswith(".json")]
+                if port_file == [] and cur_test == "fixture":
+                    raise FileNotFoundCustomError(
+                        "\r\nport_file not found: " + directory
+                    )
 
-            # Get Fixture Port File
-            self.port_path = os.path.join(directory, port_file[0])
-            print("port_path:", self.port_path)
-            GlobalLogger.log("port file: " + f"{self.port_path}")
-            self.message_box.append(
-                GlobalComm.get_langdic_val("view", "select_cfg_file")
-                + f"{self.port_path}"
-            )
+                # Get Fixture Port File
+                self.port_path = os.path.join(directory, port_file[0])
+                print("port_path:", self.port_path)
+                GlobalLogger.log("port file: " + f"{self.port_path}")
+                self.message_box.append(
+                    GlobalComm.get_langdic_val("view", "select_cfg_file")
+                    + f"{self.port_path}"
+                )
 
-            # Obtaining Fixture Test Documents
-            self.cfg_file_path = os.path.join(directory, cfg_file[0])
-            print("cfg_file_path:", self.cfg_file_path)
-            GlobalLogger.log("cfg file: " + f"{self.cfg_file_path}")
-            self.message_box.append(
-                GlobalComm.get_langdic_val("view", "select_cfg_file")
-                + f"{self.cfg_file_path}"
-            )
+                # Obtaining Fixture Test Documents
+                self.cfg_file_path = os.path.join(directory, cfg_file[0])
+                burn_path = self.cfg_file_path
+                print("cfg_file_path:", self.cfg_file_path)
+                GlobalLogger.log("cfg file: " + f"{self.cfg_file_path}")
+                self.message_box.append(
+                    GlobalComm.get_langdic_val("view", "select_cfg_file")
+                    + f"{self.cfg_file_path}"
+                )
 
-            # Getting the Power Test File
-            power_test_file = GlobalComm.setting_json["power_test_file"]
-            if power_test_file in cfg_files:
-                self.power_cfg_path = os.path.join(directory, power_test_file)
-            print("power_cfg_path:", self.power_cfg_path)
+                # Getting the Power Test File
+                power_test_file = GlobalComm.setting_json["power_test_file"]
+                if power_test_file in cfg_files:
+                    self.power_cfg_path = os.path.join(directory, power_test_file)
+                print("power_cfg_path:", self.power_cfg_path)
 
             # Extract the necessary burn-in information from the configuration file
-            board, self.mcu_type, file_suffix = parse_cfg_flash_info(self.cfg_file_path)
+            board, self.mcu_type, file_suffix, self.burn_method = parse_cfg_flash_info(
+                burn_path
+            )
             self.message_box.append(
                 f"Board: {board}\t"
                 + f"MCU: {self.mcu_type}\t"
                 + f" File Suffix: {file_suffix}\r"
+                + f" Burn Method: {self.burn_method}\r"
             )
 
             GlobalLogger.log(
                 f"Board: {board}\t"
                 + f"MCU: {self.mcu_type}\t"
                 + f" File Suffix: {file_suffix}\r"
+                + f" Burn Method: {self.burn_method}\r"
             )
 
             print(f"Board: {board}\r")
@@ -315,7 +330,7 @@ class MainWindow(QMainWindow):
 
     def on_upload_firmware(self):
         if self.file_edit.text() and self.mcu_type:
-            self.usb_flash.exec(self.mcu_type, self.file_edit.text())
+            self.usb_flash.exec(self.mcu_type, self.burn_method, self.file_edit.text())
             GlobalLogger.log("\r\n flash file: " + self.file_edit.text())
         else:
             err_tip = GlobalComm.get_langdic_val("error_tip", "err_not_select_file")

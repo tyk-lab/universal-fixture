@@ -7,7 +7,7 @@ if [ "$#" -ne 3 ]; then
 fi
 
 # Get tool execution path
-SCRIPT_DIR="$(readlink -f "$0")"
+SCRIPT_PATH="$(readlink -f "$0")"
 SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
 # Get the parameters passed in
 MCU_TYPE=$1
@@ -15,6 +15,7 @@ BURN_METHOD=$2
 FIRMWARE_PATH=$3
 
 HAS_EXCEPT=0
+
 
 ########################### related function ############################
 
@@ -25,8 +26,8 @@ err_tip() {
 
 flash_dfu() {
 # Execute different commands according to mcu type
-if [ "$MCU_TYPE" == "stm32xx" ]; then
-    echo "flash stm32xx"
+if [[ "$MCU_TYPE" == *"stm32"* ]]; then
+    echo "flash stm32"
 else
     HAS_EXCEPT=1
 fi
