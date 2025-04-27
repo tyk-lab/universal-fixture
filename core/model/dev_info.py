@@ -41,6 +41,7 @@ class DevInfo:
     # Check that the function is eligible
     def check_btn_state(self, key, state):
         from core.utils.exception.ex_test import TestFailureException
+        from core.utils.opt_log import GlobalLogger
 
         dev_check_dict = self.get_btn_state(key)
 
@@ -49,18 +50,15 @@ class DevInfo:
         log_dict = {}
 
         # ok if the device value and the effect of the control are the same
+        for key, value in dev_check_dict.items():
+            log_dict[key] = "fixture set: " + str(state) + " | dev val： " + str(value)
+            if value is not state:
+                dev_check_dict[key] = False
+            else:
+                dev_check_dict[key] = True
+
+        GlobalLogger.log("btn log data:", log_dict)
         if has_exception:
-            for key, value in dev_check_dict.items():
-                log_dict[key] = (
-                    "fixture set: "
-                    + str(state)
-                    + " dev val： "
-                    + str(dev_check_dict[key])
-                )
-                if value is not state:
-                    dev_check_dict[key] = False
-                else:
-                    dev_check_dict[key] = True
             raise TestFailureException(dev_check_dict, log_dict)
 
     ############################## th Equipment Related ############################
@@ -141,6 +139,7 @@ class DevInfo:
         dev_check_dict = {}
         has_exception = False
         check_cnt = 0
+        print(fixture_dict)
         # Ok if the temperature sensing value is about the same as the fixture value and is in the room temperature range.
         for key, value in dev_dict.items():
             fixture_val = float(fixture_dict[key])
@@ -339,6 +338,7 @@ class DevInfo:
         result_dict = {}
         if self.dev_dicts[key] != []:
             sensor_dict = self.klipper.get_info(key)
+            print(sensor_dict)
             for key, value in sensor_dict.items():
                 result_dict[key] = value["rpm"]
         return result_dict
