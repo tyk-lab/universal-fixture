@@ -16,6 +16,16 @@ from core.model.json_protocol import (
 )
 
 
+def build_th_JsonField():
+    payload = {
+        "thSQ": [
+            {"port": "0", "name": "th0"},
+            {"port": "1", "name": "th1"},
+        ]
+    }
+    return payload
+
+
 class FixtureInfo:
     def __init__(self, port_path, serial_port):
         self.port_path = port_path
@@ -43,7 +53,7 @@ class FixtureInfo:
                     frame_info[dev_module].append(key_json)
 
             self.dev_frame_dict[dev_module] = frame_info
-            send_json_frame(self.serial_dev, FrameType.Cfg, frame_info)
+            self.send_command_and_format_result(FrameType.Cfg, dev_module)
 
         #! Supplementary built-in module initialisation
         self.dev_frame_dict["syncSQ"] = {"port": "0", "name": "sync"}

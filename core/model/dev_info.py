@@ -127,6 +127,7 @@ class DevInfo:
     def check_th(self, key, fixture_dict):
         from core.utils.exception.ex_test import TestFailureException
         from core.utils.common import GlobalComm
+        from core.utils.opt_log import GlobalLogger
 
         dev_dict = self.get_th_info(key, False)
         tolerance = float(GlobalComm.setting_json["temp_check_tolerance"])
@@ -139,7 +140,6 @@ class DevInfo:
         dev_check_dict = {}
         has_exception = False
         check_cnt = 0
-        print(fixture_dict)
         # Ok if the temperature sensing value is about the same as the fixture value and is in the room temperature range.
         for key, value in dev_dict.items():
             fixture_val = float(fixture_dict[key])
@@ -164,6 +164,7 @@ class DevInfo:
             )
             check_cnt = 0
 
+        GlobalLogger.log("th log data:", log_dict)
         if has_exception:
             raise TestFailureException(dev_check_dict, log_dict)
 
@@ -195,6 +196,7 @@ class DevInfo:
 
     def check_vol(self, except_vol_dict, fixtur_dict):
         from core.utils.exception.ex_test import TestFailureException
+        from core.utils.opt_log import GlobalLogger
 
         log_dict = {}
         dev_check_dict = {}
@@ -208,6 +210,8 @@ class DevInfo:
             else:
                 dev_check_dict[key] = False
                 has_exception = True
+
+        GlobalLogger.log("vol log data:", log_dict)
         if has_exception:
             raise TestFailureException(dev_check_dict, log_dict)
 
@@ -411,7 +415,12 @@ class DevInfo:
         result_dict = fixture.send_command_and_format_result(
             FrameType.Request, "rgbwSQ"
         )
+
         if result_dict != None:
+            result_dict = {
+                k: ", ".join([item.strip() for item in v.split(",")[1:]])
+                for k, v in result_dict.items()
+            }
             rgb_raw_max = 255
             for key, value in result_dict.items():
                 result_dict[key] = [
@@ -432,6 +441,7 @@ class DevInfo:
 
     def check_rgbw_state(self, set_color, fixture_dict):
         from core.utils.exception.ex_test import TestFailureException
+        from core.utils.opt_log import GlobalLogger
 
         log_dict = {}
         dev_check_dict = {}
@@ -446,24 +456,30 @@ class DevInfo:
             if key in fixture_dict:
                 # Format and combine the colour data to output something like: {'blue': 33, 'green': 33, 'red': 33}
                 rgb_value_list = fixture_dict[key]
+                check_color_index = 0
                 fixture_color_dict = dict(zip(color_order, rgb_value_list))
 
                 log_dict[key] = (
-                    "set: " + set_color + " | fixture color: " + str(fixture_color_dict)
+                    "set: "
+                    + set_color
+                    + " "
+                    + str(tolerance)
+                    + " | fixture color: "
+                    + str(fixture_color_dict)
                 )
 
                 # Pass if greater than tolerance
                 dev_check_dict[key] = True
-                check_color_index = 0
                 # 1. Determine if only one colour value meets the criteria
                 for value in fixture_color_dict.values():
-                    if not (value >= tolerance):
+                    if value >= tolerance:
                         check_color_index += 1
 
                 # 2. Determination of compliance with the criteria for colour values (white - non-white)
                 if set_color != "white":
-                    if check_color_index != 1 or not (
+                    if not (
                         fixture_color_dict[set_color] >= tolerance
+                        and check_color_index == 1
                     ):
                         dev_check_dict[key] = False
                         has_exception = True
@@ -474,6 +490,8 @@ class DevInfo:
             else:  # Devices that do not participate in the detection, directly default ok
                 dev_check_dict[key] = True
                 log_dict[key] = "No testing"
+
+        GlobalLogger.log("rgbw log data:", log_dict)
         if has_exception:
             raise TestFailureException(dev_check_dict, log_dict)
 
@@ -610,4 +628,5 @@ class DevInfo:
     ############################## other Equipment Related ############################
 
     def run_other(self, run):
-        self.klipper.run_test_gcode("_TEST_OTHER RUN=" + "1" if run else "0")
+        enable = "1" if run else "0"
+        self.klipper.run_test_gcode("_TEST_OTHER RUN=" + enable)
