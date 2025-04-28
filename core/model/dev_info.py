@@ -235,6 +235,8 @@ class DevInfo:
         Returns:
             _type_: Gauge Polling Signal Results
         """
+        from core.utils.common import GlobalComm
+
         fan_ppr = 2
         mcu_sample_time = sample_time * 1000
         frame = {
@@ -248,11 +250,17 @@ class DevInfo:
             result_dict = fixture.send_command_and_format_result(
                 FrameType.Request, dev_type
             )
+            fan_type = GlobalComm.setting_json["fan_type"]
 
             # For second-line fans, the air velocity is calculated by means of a jig.
             for key, value in dev_dict.items():
                 if value == None:
-                    freq = int(result_dict[key]) / mcu_sample_time
+                    if fan_type != "HighSpeed":
+                        freq = int(result_dict[key]) / sample_time
+                    else:
+                        freq = (
+                            int(result_dict[key]) * 2 / sample_time
+                        )  # High speed, over 10,000 rpm
                     # References fan.py in klipper: line 99 and pulse_counter.py, pulse_counter.c
                     result_dict[key] = freq * 30.0 / fan_ppr
 
@@ -349,11 +357,11 @@ class DevInfo:
 
     def run_fan(self, value, wait_time=0):
         self.klipper.run_test_gcode("_TEST_FANS FAN_SPEED=" + value)
-        time.sleep(wait_time)  # Wait for the wind to stabilise
 
     def check_fan_state(self, set_val, fixture_dict):
         from core.utils.exception.ex_test import TestFailureException
         from core.utils.common import GlobalComm
+        from core.utils.opt_log import GlobalLogger
 
         expected_rpm = GlobalComm.setting_json["expected_fan_rpm"]
         tolerance = float(GlobalComm.setting_json["fan_check_tolerance"])
@@ -390,7 +398,7 @@ class DevInfo:
             else:
                 result_dict[key] = False
                 has_exception = True
-
+        GlobalLogger.log("fan log data:", log_dict)
         if has_exception:
             raise TestFailureException(result_dict, log_dict)
 

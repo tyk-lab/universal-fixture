@@ -8,6 +8,7 @@
         "sigle": "sigle",
         "power": "power"
     },
+    "fan_type": "HighSpeed",
     "expected_fan_rpm": {
         "0": "0",
         "0.3": "2000",

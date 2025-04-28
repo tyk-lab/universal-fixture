@@ -343,8 +343,8 @@ class TestRun(QWidget):
         # self.dev_test.test_accel(
         #     self.cfg_path, self.time_check_dialog, self.start_timer_dialog_signal
         # )
-        self.dev_test.test_rgbw()
-        # self.dev_test.test_fan()
+        # self.dev_test.test_rgbw()
+        self.dev_test.test_fan()
         # self.dev_test.test_btn()
         # self.dev_test.test_comm_th()
         # self.dev_test.test_heat()
