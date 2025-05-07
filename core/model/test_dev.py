@@ -24,6 +24,7 @@ class DevTest:
             "heater_bed": [],
             "extruder": [],
             "extruder_stepper ": [],
+            "manual_stepper ": [],
             "neopixel ": [],
             "output_pin ": [],
             # "adxl345": [],  # This won't read in klipper.
@@ -221,28 +222,33 @@ class DevTest:
         # !currently just marks it as the same and displays the result independently (_test_keys_failture_exception)
         key = "extruder"
         other_key = "heater_bed"
+        other_key1 = "manual_stepper "
         vol_fixture_dict = {}
         if klipper_state and fixture_state:
             try:
-                if self.dev_dicts[key] != [] or self.dev_dicts[other_key]:
+                if (
+                    self.dev_dicts[key] != []
+                    or self.dev_dicts[other_key]
+                    or self.dev_dicts[other_key1]
+                ):
                     GlobalLogger.divider_head_log("extruder or heater_bed heat")
 
                     ##################### init part #######################
-                    vol_init_dict = self.dev.req_vol_info(self.fixture, True, True)
+                    vol_init_dict = self.dev.req_vol_info(self.fixture, True)
                     init_th_dict = self.dev.req_th_info(self.fixture, True)
 
                     ##################### heat part #######################
                     first_dict, second_dict = self.dev.control_heating_cooling(
                         self.fixture, True
                     )
-                    vol_heat_dict = self.dev.req_vol_info(self.fixture, True, True)
+                    vol_heat_dict = self.dev.req_vol_info(self.fixture, True)
                     self.dev.check_heat(first_dict, second_dict, vol_heat_dict, True)
 
                     ##################### cooling part #######################
                     first_dict, second_dict = self.dev.control_heating_cooling(
                         self.fixture, False
                     )
-                    vol_cooling_dict = self.dev.req_vol_info(self.fixture, True, True)
+                    vol_cooling_dict = self.dev.req_vol_info(self.fixture, True)
                     self.dev.check_heat(
                         first_dict, second_dict, vol_cooling_dict, False
                     )
@@ -254,13 +260,17 @@ class DevTest:
                         "cooling vol" + str(vol_cooling_dict),
                         "heat vol" + str(vol_heat_dict),
                     )
-                    self.show_keys_result((key, other_key), vol_fixture_dict)
+                    self.show_keys_result(
+                        (key, other_key, other_key1), vol_fixture_dict
+                    )
             except TestFailureException as e:
                 self.dev.reset_klipper_state()
-                self._test_keys_failture_exception(e, (key, other_key))
+                self._test_keys_failture_exception(e, (key, other_key, other_key1))
             except TestReplyException as e:
                 self.dev.reset_klipper_state()
-                self._test_keys_failture_exception((key, other_key), False, e.message)
+                self._test_keys_failture_exception(
+                    (key, other_key, other_key1), False, e.message
+                )
         else:
             self._raise_connect_exception(klipper_state, fixture_state)
 
@@ -406,15 +416,25 @@ class DevTest:
 
         check_key = "extruder"
         key = "extruder_stepper "
+        manual_stepper_key = "manual_stepper "
         poll_key = "motorSQ"
         motor_run_time = 3
         if klipper_state and fixture_state:
             try:
-                if self.dev_dicts[check_key] != []:
+                print(self.dev_dicts, "\r\n", self.dev_dicts[manual_stepper_key])
+                if (
+                    self.dev_dicts[check_key] != []
+                    or self.dev_dicts[manual_stepper_key] != []
+                ):
                     GlobalLogger.divider_head_log(check_key + " motor")
                     # Multi-motor motion must have extruder motor, contains extruder field
                     if "extruder" not in self.dev_dicts[key]:
                         self.dev_dicts[key].append("extruder")
+
+                    val_dict_1, dir_dict_1 = self.dev.req_encoder_info(
+                        poll_key, self.fixture, motor_run_time
+                    )
+                    GlobalLogger.log("init_val:", val_dict_1, dir_dict_1)
 
                     #  Positive motor rotation
                     self.dev.run_monitoring(poll_key, self.fixture, True)
@@ -431,7 +451,7 @@ class DevTest:
                     self.dev.check_motor_distance(val_dict_2)
 
                     # Inspection Direction
-                    self.check_motor_dir(dir_dict_1, dir_dict_2)
+                    self.dev.check_motor_dir(dir_dict_1, dir_dict_2)
                     self.show_result(key)
             except TestFailureException as e:
                 self._test_failture_exception(e, key)
@@ -471,9 +491,7 @@ class DevTest:
         if fixture_state:
             try:
                 GlobalLogger.divider_head_log("test_vol")
-                vol_dict = self.dev.req_vol_info(self.fixture, False, False)
-                # Determine the actual voltage tested, reset the tuple value
-                key_tuple = tuple(item for item in key_tuple if item in vol_dict)
+                vol_dict = self.dev.req_vol_info(self.fixture, False)
                 vol_fixture_dict = self.dev.check_vol(except_vol_dict, vol_dict)
                 self.show_keys_result(key_tuple, vol_fixture_dict)
             except TestFailureException as e:

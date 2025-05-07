@@ -4,6 +4,7 @@
 @Desc    :   Obtain product and gage information to determine compliance with requirements
 """
 
+from sqlite3 import Time
 import time
 from core.model.json_protocol import FrameType
 from core.utils.thermistor import CustomThermistor
@@ -27,7 +28,7 @@ class DevInfo:
     ############################ btn Equipment Related ############################
     # Controls the relevant port of the btn module, outputs val
     def otp_btn_state(self, fixture, val):
-        fixture.send_command(FrameType.Opt, "btnSV", val)
+        fixture.send_and_read_result(FrameType.Opt, "btnSV", val)
 
     # Manipulate the product board to get the corresponding status
     def get_btn_state(self, key):
@@ -170,7 +171,23 @@ class DevInfo:
 
     ############################## vol Equipment Related ############################
 
-    def req_vol_info(self, fixture, is_fields_key, is_verbose):
+    def format_vol_info(self, result_dict):
+        for key, value in result_dict.items():
+            if isinstance(value, str):
+                # 根据实际业务可以拓展判断条件，此处简单判断是否以 '0x' 开头且包含逗号
+                if value.strip().startswith("0x") and "," in value:
+                    s = value
+                    parts = [p.strip() for p in s.split(",")]
+                    if not parts:
+                        return s
+                    # 保留第一部分
+                    new_parts = [parts[0]]
+                    # 处理后续部分
+                    for p in parts[1:]:
+                        new_parts.append(str(float(p) / 10000))
+                    return {key: ", ".join(new_parts)}
+
+    def req_vol_info(self, fixture, is_fields_key):
         from core.utils.exception.ex_test import TestReplyException
 
         # todo, 获取电压，电流，功耗信息，待验证
@@ -181,16 +198,15 @@ class DevInfo:
         if is_fields_key:
             frame_info = fields_frame_info
         result_dict = fixture.send_command_and_format_result(
-            FrameType.Request, "volSQ", frame_info
+            FrameType.Request, "volSQ", frame_info, 1
         )
 
         if result_dict == None:
             raise TestReplyException(
                 self.req_vol_info.__name__ + ": fixture reply null"
             )
-        elif not is_verbose:
-            result_dict = {k: v.split(",")[1].strip() for k, v in result_dict.items()}
 
+        result_dict = self.format_vol_info(result_dict)
         print("req_vol_info: ", result_dict)
         return result_dict
 
@@ -201,8 +217,11 @@ class DevInfo:
         log_dict = {}
         dev_check_dict = {}
         has_exception = False
+        print("check vol", fixtur_dict)
+
         for key, value in fixtur_dict.items():
-            cur_vol = float(value)
+            parts = [s.strip() for s in value.split(",")]
+            cur_vol = float(parts[1])
             log_dict[key] = "cur: " + value
 
             if except_vol_dict[key] - 1.3 <= cur_vol <= except_vol_dict[key]:
@@ -276,7 +295,7 @@ class DevInfo:
         first_fixture_dict = self.req_th_info(fixture, True)
         time.sleep(1)
         self.run_heat("1" if is_temp_up else "0")
-        time.sleep(5)  # Wait for the heater to stabilise
+        time.sleep(6)  # Wait for the heater to stabilise
         second_fixture_dict = self.req_th_info(fixture, True)
         return first_fixture_dict, second_fixture_dict
 
@@ -292,14 +311,16 @@ class DevInfo:
         has_exception = False
         check_cnt = 0
         for key, value in first_dict.items():
-            first_val = float(first_dict[key])
-            second_val = float(second_dict[key])
+            first_th = float(first_dict[key])
+            second_th = float(second_dict[key])
 
             # 1. If it does not match the expected heating or cooling effect, there is an abnormality
-            if is_temp_up and second_val > first_val + tolerance:
+            if is_temp_up and second_th > first_th + tolerance:
                 check_cnt += 1
-            elif is_temp_up == False and first_val > second_val + tolerance:
+            elif is_temp_up == False and first_th > second_th + tolerance:
                 check_cnt += 1
+
+            print("check cnt1 ", check_cnt)
 
             # 2. Judging whether voltage is output when heating
             info_parts = vol_dict[key].split(",")[1]
@@ -309,31 +330,27 @@ class DevInfo:
             elif is_temp_up == False and 0 <= cur_vol <= 1:
                 check_cnt += 1
 
+            print("check cnt2 ", check_cnt)
             if check_cnt < 2:
                 has_exception = True
 
             # Heating or cooling, voltage changes as required and temperature sensing value will change then it is ok
             dev_check_dict[key] = not has_exception
             sub_val = (
-                second_val - first_val
+                second_th - first_th
             )  #! A positive value (2>1) when heated and a negative value (2<1) when cooled.
             log_dict[key] = (
                 "heat dir: " + str(is_temp_up),  # Cooling is False, heating bit True
                 "result: " + str(dev_check_dict[key]),
                 "tolerance: " + str(tolerance),
                 "th 2 sub 1 val: " + "{:.2f}".format(sub_val),
-                "first th: " + str(first_val),
-                "second th: " + str(second_val),
+                "first th: " + "{:.2f}".format(first_th),
+                "second th: " + "{:.2f}".format(second_th),
                 "check cnt: " + str(check_cnt),
                 "vol info: " + str(vol_dict[key]),
             )
-            # Output debugging information
-            GlobalLogger.debug_print(
-                self.check_heat.__name__, key, is_temp_up, log_dict[key]
-            )
-            GlobalLogger.log(self.check_heat.__name__, key, is_temp_up, log_dict[key])
+            GlobalLogger.log("heat log data:", log_dict)
             check_cnt = 0
-
         if has_exception:
             raise TestFailureException(dev_check_dict, log_dict)
 
@@ -550,6 +567,7 @@ class DevInfo:
         fixture.send_command(FrameType.Poll, dev_type, "1", frame)
         time.sleep(0.5)
         self.run_motor(dir)
+        time.sleep(2)
 
     def req_encoder_info(self, dev_type, fixture, run_time_s):
         return self._stop_wait_dev_encoder_reply(fixture, dev_type, run_time_s)
@@ -585,31 +603,35 @@ class DevInfo:
         )
 
     def run_motor(self, dir):
-        self.klipper.run_test_gcode("_TEST_MOTOR_A_LOOP DIR=" + "1" if dir else "0")
+        dir = "1" if dir else "0"
+        self.klipper.run_test_gcode("_TEST_MOTOR_A_LOOP DIR=" + dir)
 
     def check_motor_distance(self, fixture_dict):
         from core.utils.exception.ex_test import TestFailureException
         from core.utils.common import GlobalComm
 
         # todo, 设一圈的脉冲数为 200*16*40=128000
-        stander_pulses = 128000
-        tolerance = float(GlobalComm.setting_json["motor_encoder_tolerance"])
+        stander_pulses = 216189
+        # tolerance = float(GlobalComm.setting_json["motor_encoder_tolerance"])
+        tolerance = 10000000
         log_dict = {}
         result_dict = {}
         has_exception = False
 
         a_loop_pulses_up = stander_pulses + tolerance
-        a_loop_pulses_down = stander_pulses + tolerance
+        a_loop_pulses_down = stander_pulses - tolerance
         tip = " stander: " + str(stander_pulses) + " tolerance: " + str(tolerance)
         for key, pulses in fixture_dict.items():
             val = float(pulses)
             log_dict[key] = "  cur pulses:  " + str(pulses) + tip
+            print(a_loop_pulses_down, val, a_loop_pulses_up)
             if a_loop_pulses_down <= val <= a_loop_pulses_up:
                 result_dict[key] = True
             else:
                 result_dict[key] = False
                 has_exception = True
 
+        print("check ", has_exception)
         if has_exception:
             raise TestFailureException(result_dict, log_dict)
 

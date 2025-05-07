@@ -159,6 +159,15 @@ class FixtureInfo:
             return self._format_reply_info(reply)
         return None
 
+    def send_and_read_result(self, frame_type, dev_type, value):
+        for dev in self.dev_frame_dict[dev_type].get(dev_type, []):
+            dev["value"] = value
+        send_json_frame(self.serial_dev, frame_type, self.dev_frame_dict[dev_type])
+        reply = self._wait_fixture_reply()
+        if reply != None:
+            return self._format_reply_info(reply)
+        return None
+
     # Intercepts special segment areas in port configurations,
     # delineating segment area fields and non-segment area fields
     def extract_fields_between_keys(self, dev_type, start_key="start", end_key="end"):
