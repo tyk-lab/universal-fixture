@@ -317,6 +317,7 @@ class TestRun(QWidget):
 
     def on_test_complete(self):
         self.loading_git.stop_gif()
+        self.klipper.shucdown_klipper()
 
     #! Arbitrary exceptions in the test are signalled and sent here to the
     def on_test_err(self, result, err):

@@ -63,12 +63,22 @@ class KlipperService:
 
     # return: sensors dicts
     def get_info(self, key):
+        from core.utils.exception.ex_test import TestKlipperNullException
+
         sensors = self.printer.list_sensors(key)
         dicts = self.printer.query_sensors(sensors, key)
+
+        if dicts == []:
+            raise TestKlipperNullException()
         return dicts
 
     # key: "gcode_button "
     def list_names(self, key):
+        from core.utils.exception.ex_test import TestKlipperNullException
+
         sensors = self.printer.list_sensors(key)
         dicts = self.printer.query_sensors(sensors, key)
+
+        if dicts == []:
+            raise TestKlipperNullException()
         return list(dicts.keys())

@@ -28,6 +28,7 @@ class TestThread(QThread):
     # flash device thread
     def run(self):
         from core.utils.exception.ex_test import TestConnectException
+        from core.utils.exception.ex_test import TestKlipperNullException
         from core.utils.opt_log import GlobalLogger
 
         try:
@@ -44,6 +45,11 @@ class TestThread(QThread):
                 self.run.__name__, "fixture_test Connect exceptions：", e.message
             )
             self.error_occurred.emit("fixture_test Connect err: ", e.message)
+        except TestKlipperNullException as e:
+            GlobalLogger.debug_print(
+                self.run.__name__, "fixture_test klipper net exceptions：", e.message
+            )
+            self.error_occurred.emit("fixture_test klipper net err: ", e.message)
         except Exception as e:
             traceback_msg = traceback.format_exc()
             self.error_occurred.emit(

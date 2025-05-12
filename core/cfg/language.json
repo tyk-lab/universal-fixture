@@ -52,6 +52,7 @@
         "excep_test": {
             "test_result": "测试异常",
             "test_failure": "测试失败异常",
+            "test_klipper": "测试klipper返回[]异常，获取信息失败",
             "test_timeout": "测试超时异常",
             "test_connect": "测试中连接异常",
             "test_frame": "测试数据帧格式异常",

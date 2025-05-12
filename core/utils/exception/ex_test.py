@@ -32,6 +32,18 @@ class TestFailureException(TestResultException):
         super().__init__(message, *args, **kwargs)
 
 
+class TestKlipperNullException(TestResultException):
+    """Test Failure Exception, klipper feedback null"""
+
+    def __init__(
+        self,
+        message=GlobalComm.get_langdic_val("excep_test", "test_klipper"),
+        *args,
+        **kwargs
+    ):
+        super().__init__(message, *args, **kwargs)
+
+
 class TestTimeoutException(TestResultException):
     """Test timeout exception, used to indicate that a test has run longer than the scheduled time"""
 
