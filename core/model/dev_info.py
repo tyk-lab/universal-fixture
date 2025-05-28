@@ -133,6 +133,8 @@ class DevInfo:
         dev_dict = self.get_th_info(key, False)
         tolerance = float(GlobalComm.setting_json["temp_check_tolerance"])
 
+        one_feedback = GlobalComm.setting_json["one_th_test_feedback"].lower() == "true"
+
         normal_temp_range = self._get_normal_temp_range()
         lower_bound = min(normal_temp_range)
         upper_bound = max(normal_temp_range)
@@ -141,9 +143,11 @@ class DevInfo:
         dev_check_dict = {}
         has_exception = False
         check_cnt = 0
+        fixture_val = float(next(iter(fixture_dict.values())))
         # Ok if the temperature sensing value is about the same as the fixture value and is in the room temperature range.
         for key, value in dev_dict.items():
-            fixture_val = float(fixture_dict[key])
+            if not one_feedback:
+                fixture_val = float(fixture_dict[key])
 
             # 1. Two comparisons. Big difference.
             if fixture_val - tolerance <= value <= fixture_val + tolerance:
