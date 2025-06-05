@@ -1,7 +1,7 @@
 {
     "language": "zh",
     "loading_gif": "core/cfg/loading.gif",
-    "cur_test_mode": "fixture",
+    "cur_test_mode": "sigle",
     "test_mode": {
         "fixture": "fixture",
         "comm": "comm",
@@ -16,6 +16,7 @@
     },
     "temp_type": "NTC_100K_4_R025H4G",
     "temp_pullup_resistor": "2200",
+    "one_th_test_feedback": "true",
     "accel_inaccuracies": "700",
     "normal_temp_range": "(10-35)",
     "temp_check_tolerance": "3",
