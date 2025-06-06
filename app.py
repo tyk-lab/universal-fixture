@@ -392,14 +392,15 @@ class MainWindow(QMainWindow):
         self.dialog.show_info(GlobalComm.get_langdic_val("view", "about_text"))
 
     def update_software_version(self):
-        """Update the software version in the UI."""
+        """Update the software版本 in the UI."""
         script_path = os.path.join(
             os.path.dirname(__file__), "github_update_soft", "main.py"
         )
         python_exe = sys.executable
-        subprocess.run([python_exe, script_path])
-        # 退出自身
-        MainWindow.on_exit_app()
+        # 使用Popen非阻塞启动
+        subprocess.Popen([python_exe, script_path])
+        # 立刻退出自身
+        QApplication.quit()
 
     ############### Static method for exit application ###############
     @staticmethod
