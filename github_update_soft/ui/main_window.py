@@ -19,7 +19,7 @@ class MainWindow(QMainWindow):
         self.check_updates_button = QPushButton("更新软件")
         self.check_updates_button.clicked.connect(self.check_for_updates)
         layout.addWidget(self.check_updates_button)
-        
+
         self.firmware_update_button = QPushButton("更新配置和固件")
         self.firmware_update_button.clicked.connect(self.update_firmware)
         layout.addWidget(self.firmware_update_button)
@@ -27,7 +27,7 @@ class MainWindow(QMainWindow):
         container = QWidget()
         container.setLayout(layout)
         self.setCentralWidget(container)
-        
+
     def update_firmware(self):
         from utils.firmware_update import FirmwareUpdateThread
         from ui.updater_dialog import UpdaterDialog
@@ -36,7 +36,7 @@ class MainWindow(QMainWindow):
         dlg.update_status("准备下载固件...")
         dlg.progress_bar.setValue(0)
 
-        repo_url = "https://github.com/tyk-lab/universal-fixture.git"  # 替换为你的仓库
+        repo_url = "https://github.com/tyk-lab/universal-fixture"  # 替换为你的仓库
         self.firmware_thread = FirmwareUpdateThread(self.updater, repo_url)
         self.firmware_thread.progress.connect(dlg.update_progress)
         self.firmware_thread.status.connect(dlg.update_status)
