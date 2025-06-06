@@ -5,6 +5,7 @@
 """
 
 import os
+import subprocess
 import sys
 import locale
 import webbrowser
@@ -53,6 +54,11 @@ class MainWindow(QMainWindow):
         # File menu page
         #############################
         file_menu = menu_bar.addMenu(GlobalComm.get_langdic_val("view", "file_menu"))
+
+        # Update software version sub-page
+        action = QAction(GlobalComm.get_langdic_val("view", "file_menu_update"), self)
+        action.triggered.connect(MainWindow.update_software_version)
+        file_menu.addAction(action)
 
         # Exit the application sub-page
         action = QAction(GlobalComm.get_langdic_val("view", "file_menu_exit"), self)
@@ -385,6 +391,17 @@ class MainWindow(QMainWindow):
     def on_show_about(self):
         self.dialog.show_info(GlobalComm.get_langdic_val("view", "about_text"))
 
+    def update_software_version(self):
+        """Update the software version in the UI."""
+        script_path = os.path.join(
+            os.path.dirname(__file__), "github_update_soft", "main.py"
+        )
+        python_exe = sys.executable
+        subprocess.run([python_exe, script_path])
+        # 退出自身
+        MainWindow.on_exit_app()
+
+    ############### Static method for exit application ###############
     @staticmethod
     def on_exit_app():
         QApplication.quit()

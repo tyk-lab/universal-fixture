@@ -31,6 +31,7 @@
             "test_table_col4": "备注",
             "test_result_ok": "通过",
             "test_result_err": "出错",
+            "file_menu_update": "软件更新",
             "test_dev_type": "通信"
         },
         "error_tip": {
