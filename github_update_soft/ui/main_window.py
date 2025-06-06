@@ -36,7 +36,7 @@ class MainWindow(QMainWindow):
         dlg.update_status("准备下载固件...")
         dlg.progress_bar.setValue(0)
 
-        repo_url = "https://github.com/tyk-lab/universal-fixture"  # 替换为你的仓库
+        repo_url = "https://gitee.com/tyk_123/save_fixture_firmware"  # 替换为你的仓库
         self.firmware_thread = FirmwareUpdateThread(self.updater, repo_url)
         self.firmware_thread.progress.connect(dlg.update_progress)
         self.firmware_thread.status.connect(dlg.update_status)
