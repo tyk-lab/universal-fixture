@@ -1,14 +1,13 @@
 import os
+import re
 import subprocess
 import requests
 import zipfile
 import io
 
 
-
-
 class Updater:
-    
+
     def __init__(self, version_file="version", remote="origin"):
         self.version_file = version_file
         self.remote = remote
@@ -26,7 +25,7 @@ class Updater:
 
     def get_latest_version(self, branch="master", file_path="version"):
         from utils.git_sync import run_git_command
-        
+
         list = ["git", "show", f"{self.remote}/{branch}:{file_path}"]
         print(list)
         return run_git_command(["git", "show", f"{self.remote}/{branch}:{file_path}"])
@@ -40,6 +39,7 @@ class Updater:
 
     def is_dirty(self):
         from test_update.utils.git_sync import run_git_command
+
         status = run_git_command(["git", "status", "--porcelain"])
         return bool(status.strip())
 
@@ -48,7 +48,7 @@ class Updater:
             run_git_command(["git", "restore", "."])
 
     def download_and_extract_release_zip(
-        self, repo_url, tag, filename, extract_to=".", log = None
+        self, repo_url, tag, filename, extract_to=".", log=None, progress=None
     ):
         """
         :param repo_url: Warehouse address, e.g. https://github.com/yourusername/yourrepo
@@ -61,21 +61,58 @@ class Updater:
         print(f"Downloading with curl: {zip_url}")
         log.emit(zip_url)
         try:
-            # 使用curl下载
-            result = subprocess.run(
-                ["curl", "-L", "-o", local_zip, zip_url],
+
+            # 使用curl下载，增加 --progress-bar 显示进度
+            process = subprocess.Popen(
+                ["curl", "-L", "--progress-bar", "-o", local_zip, zip_url],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                text=True
+                text=True,
+                bufsize=1,
             )
-            if result.returncode != 0:
-                err = f"curl download failed: {result.stderr}"
-                log.emit(err)
+
+            # 处理进度条，避免百分比倒退
+            for line in process.stderr:
+                # curl --progress-bar 输出格式为：  45% [=======>             ]
+                match = re.search(r"(\d+)%", line)
+                if match:
+                    if progress:
+                        progress.emit(int(match.group(1)))
+
+            # 判断失败的情况
+            process.wait()
+            if process.returncode != 0:
+                err = f"curl download failed with code {process.returncode}"
+                print(err)
+                if log:
+                    log.emit(err)
                 return False
+
+            # 解压前先删除 firmware 文件夹
+            firmware_dir = os.path.join(extract_to, "firmware")
+            if os.path.isdir(firmware_dir):
+                import shutil
+
+                shutil.rmtree(firmware_dir)
+
             # 解压
             with zipfile.ZipFile(local_zip, "r") as zf:
-                zf.extractall(extract_to)
-            print(f"Decompression is complete and the file has been saved to. {extract_to}")
+                # 兼容中文路径：用cp437解码再用gbk编码
+                for info in zf.infolist():
+                    try:
+                        name = info.filename.encode("cp437").decode("gbk")
+                    except Exception:
+                        name = info.filename
+                    target_path = os.path.join(extract_to, name)
+                    if info.is_dir():
+                        os.makedirs(target_path, exist_ok=True)
+                    else:
+                        os.makedirs(os.path.dirname(target_path), exist_ok=True)
+                        with open(target_path, "wb") as f:
+                            f.write(zf.read(info))
+            print(
+                f"Decompression is complete and the file has been saved to. {extract_to}"
+            )
             if os.path.exists(local_zip):
                 os.remove(local_zip)
             return True

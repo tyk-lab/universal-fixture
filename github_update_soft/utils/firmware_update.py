@@ -18,8 +18,13 @@ class FirmwareUpdateThread(QThread):
         self.status.emit("开始下载固件...")
         try:
             # 这里没有真实进度，只能模拟
-            ok= self.updater.download_and_extract_release_zip(
-                self.repo_url, self.tag, "release.zip", self.extract_to, self.log
+            ok = self.updater.download_and_extract_release_zip(
+                self.repo_url,
+                self.tag,
+                "release.zip",
+                self.extract_to,
+                self.log,
+                self.progress,
             )
             if ok:
                 self.progress.emit(100)
