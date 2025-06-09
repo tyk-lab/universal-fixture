@@ -72,13 +72,15 @@ class Updater:
             )
 
             # 处理进度条，避免百分比倒退
-            for line in process.stderr:
-                # curl --progress-bar 输出格式为：  45% [=======>             ]
-                match = re.search(r"(\d+)%", line)
+            # 处理进度条，避免百分比倒退
+            for line in iter(process.stderr.readline, ""):
+                if not line:
+                    break
+                match = re.search(r"(\d+(?:\.\d+)?)%", line)
                 if match:
+                    percent = float(match.group(1))
                     if progress:
-                        progress.emit(int(match.group(1)))
-
+                        progress.emit(int(percent))
             # 判断失败的情况
             process.wait()
             if process.returncode != 0:
