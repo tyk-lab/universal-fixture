@@ -176,6 +176,7 @@ class DevInfo:
     ############################## vol Equipment Related ############################
 
     def format_vol_info(self, result_dict):
+        ret_dict = {}
         for key, value in result_dict.items():
             if isinstance(value, str):
                 # 根据实际业务可以拓展判断条件，此处简单判断是否以 '0x' 开头且包含逗号
@@ -189,7 +190,8 @@ class DevInfo:
                     # 处理后续部分
                     for p in parts[1:]:
                         new_parts.append(str(float(p) / 10000))
-                    return {key: ", ".join(new_parts)}
+                    ret_dict.update({key: ", ".join(new_parts)})
+        return ret_dict
 
     def req_vol_info(self, fixture, is_fields_key):
         from core.utils.exception.ex_test import TestReplyException
@@ -202,14 +204,15 @@ class DevInfo:
         if is_fields_key:
             frame_info = fields_frame_info
         result_dict = fixture.send_command_and_format_result(
-            FrameType.Request, "volSQ", frame_info, 1
+            FrameType.Request, "volSQ", frame_info, 2
         )
 
         if result_dict == None:
             raise TestReplyException(
                 self.req_vol_info.__name__ + ": fixture reply null"
             )
-
+            
+        
         result_dict = self.format_vol_info(result_dict)
         print("req_vol_info: ", result_dict)
         return result_dict
@@ -222,6 +225,7 @@ class DevInfo:
         dev_check_dict = {}
         has_exception = False
         print("check vol", fixtur_dict)
+        print("except vol", except_vol_dict)
 
         for key, value in fixtur_dict.items():
             parts = [s.strip() for s in value.split(",")]

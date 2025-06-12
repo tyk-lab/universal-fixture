@@ -78,7 +78,4 @@ class KlipperService:
 
         sensors = self.printer.list_sensors(key)
         dicts = self.printer.query_sensors(sensors, key)
-
-        if len(dicts) == 0 or dicts == None:
-            raise TestKlipperNullException()
         return list(dicts.keys())

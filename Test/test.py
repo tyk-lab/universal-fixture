@@ -89,9 +89,7 @@ class FrameType(IntEnum):
 def build_btn_JsonField(value):
     payload = {
         "btnSV": [
-            {"port": "0", "name": "btn1", "value": str(value)},
-            {"port": "1", "name": "btn2", "value": str(value)},
-            {"port": "2", "name": "btn3", "value": str(value)},
+            {"port": "0", "name": "btns", "value": str(value)},
         ]
     }
     return payload
@@ -164,15 +162,15 @@ def main():
 
                 value = 1 if value == 0 else 0
                 send_json_frame(ser, FrameType.Opt, build_btn_JsonField(value))
-                send_json_frame(ser, FrameType.Request, build_th_JsonField())
-                send_json_frame(ser, FrameType.Sync, build_sync_JsonField())
+                #send_json_frame(ser, FrameType.Request, build_th_JsonField())
+                #send_json_frame(ser, FrameType.Sync, build_sync_JsonField())
                 # time.sleep(0.3)
 
                 # # send_json_frame(ser, FrameType.Request, build_vol_JsonField())
                 # # time.sleep(0.3)
 
                 # send_json_frame(ser, FrameType.Request, build_rgb_JsonField())
-                time.sleep(0.3)
+                time.sleep(2)
 
     except Exception as e:
         print("发生异常：", e)

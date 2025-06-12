@@ -481,11 +481,12 @@ class DevTest:
         )
 
         fixture_state = self.fixture.is_connect(True)
-        key_tuple = ("3.3_vol", "5_vol", "24_vol")  #!Same name as the port file.
+        key_tuple = ("3_3_vol", "5_vol", "12_vol", "24_vol")  #!Same name as the port file.
         except_vol_dict = {
             key_tuple[0]: 3.3,
             key_tuple[1]: 5.0,
-            key_tuple[2]: 24.0,
+            key_tuple[2]: 12.0,
+            key_tuple[3]: 24.0,
         }
 
         if fixture_state:
