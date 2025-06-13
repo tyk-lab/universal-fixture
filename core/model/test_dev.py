@@ -343,23 +343,22 @@ class DevTest:
 
         key = "fan_generic "
         sample_time = 8  # second
-        wait_klipper_time = 4.3
         if klipper_state and fixture_state:
             try:
                 if self.dev_dicts[key] != []:
                     GlobalLogger.divider_head_log(key)
                     set_val = "0.8"
-                    self.dev.run_fan(set_val, wait_klipper_time)
+                    self.dev.run_fan(set_val)
                     fixture_dict = self.dev.req_fan_info(self.fixture, sample_time)
                     self.dev.check_fan_state(set_val, fixture_dict)
 
                     set_val = "0.3"
-                    self.dev.run_fan(set_val, wait_klipper_time)
+                    self.dev.run_fan(set_val)
                     fixture_dict = self.dev.req_fan_info(self.fixture, sample_time)
                     self.dev.check_fan_state(set_val, fixture_dict)
 
                     set_val = "0"
-                    self.dev.run_fan(set_val, wait_klipper_time)
+                    self.dev.run_fan(set_val)
                     fixture_dict = self.dev.req_fan_info(self.fixture, sample_time)
                     self.dev.check_fan_state(set_val, fixture_dict)
 
@@ -404,6 +403,26 @@ class DevTest:
 
     ############################## motor Equipment Related ############################
 
+    def select_motor_key(self):
+        """Select the key for the motor test
+
+        Args:
+            key (_type_): The key to select, like extruder_stepper, manual_stepper
+        """
+        extruder_key = "extruder"
+        extruder_stepper_key = "extruder_stepper "
+        manual_stepper_key = "manual_stepper "
+        
+        if self.dev_dicts[extruder_key] != []:
+            if self.dev_dicts[extruder_stepper_key] != []:
+                # Multi-motor motion must have extruder motor, contains extruder field
+                if "extruder" not in self.dev_dicts[extruder_stepper_key]:
+                    self.dev_dicts[extruder_stepper_key].append("extruder")
+                return extruder_stepper_key
+            return extruder_key
+        else:
+            return manual_stepper_key
+        
     def test_motor(self):
         from core.utils.opt_log import GlobalLogger
         from core.utils.exception.ex_test import (
@@ -414,45 +433,37 @@ class DevTest:
         klipper_state = self.klipper.is_connect(False)
         fixture_state = self.fixture.is_connect(True)
 
-        check_key = "extruder"
-        key = "extruder_stepper "
-        manual_stepper_key = "manual_stepper "
+        key = self.select_motor_key()
         poll_key = "motorSQ"
         motor_run_time = 3
         if klipper_state and fixture_state:
             try:
-                print(self.dev_dicts, "\r\n", self.dev_dicts[manual_stepper_key])
-                if (
-                    self.dev_dicts[check_key] != []
-                    or self.dev_dicts[manual_stepper_key] != []
-                ):
-                    GlobalLogger.divider_head_log(check_key + " motor")
-                    # Multi-motor motion must have extruder motor, contains extruder field
-                    if "extruder" not in self.dev_dicts[key]:
-                        self.dev_dicts[key].append("extruder")
+                print("dev_dicts: ", self.dev_dicts)
+            
+                GlobalLogger.divider_head_log(" motor ")
 
-                    val_dict_1, dir_dict_1 = self.dev.req_encoder_info(
-                        poll_key, self.fixture, motor_run_time
-                    )
-                    GlobalLogger.log("init_val:", val_dict_1, dir_dict_1)
+                val_dict_1, _ = self.dev.req_encoder_info(
+                    poll_key, self.fixture, motor_run_time
+                )
+                GlobalLogger.log("init_val:", val_dict_1)
 
-                    #  Positive motor rotation
-                    self.dev.run_monitoring(poll_key, self.fixture, True)
-                    val_dict_1, dir_dict_1 = self.dev.req_encoder_info(
-                        poll_key, self.fixture, motor_run_time
-                    )
-                    self.dev.check_motor_distance(val_dict_1)
+                #  Positive motor rotation
+                self.dev.run_monitoring(poll_key, self.fixture, True)
+                val_dict_1, _  = self.dev.req_encoder_info(
+                    poll_key, self.fixture, motor_run_time
+                )
+                self.dev.check_motor_distance(val_dict_1)
 
-                    # motor reversal
-                    self.dev.run_monitoring(poll_key, self.fixture, False)
-                    val_dict_2, dir_dict_2 = self.dev.req_encoder_info(
-                        poll_key, self.fixture, motor_run_time
-                    )
-                    self.dev.check_motor_distance(val_dict_2)
+                # motor reversal
+                self.dev.run_monitoring(poll_key, self.fixture, False)
+                val_dict_2, _ = self.dev.req_encoder_info(
+                    poll_key, self.fixture, motor_run_time
+                )
+                self.dev.check_motor_distance(val_dict_2)
 
-                    # Inspection Direction
-                    self.dev.check_motor_dir(dir_dict_1, dir_dict_2)
-                    self.show_result(key)
+                # Inspection Direction
+                self.dev.check_motor_dir(val_dict_1, val_dict_2)
+                self.show_result(key)
             except TestFailureException as e:
                 self._test_failture_exception(e, key)
             except TestReplyException as e:

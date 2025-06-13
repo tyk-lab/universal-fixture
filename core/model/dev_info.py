@@ -225,7 +225,7 @@ class DevInfo:
         dev_check_dict = {}
         has_exception = False
         print("check vol", fixtur_dict)
-        print("except vol", except_vol_dict)
+        #print("except vol", except_vol_dict)
 
         for key, value in fixtur_dict.items():
             parts = [s.strip() for s in value.split(",")]
@@ -380,7 +380,7 @@ class DevInfo:
                 result_dict[key] = value["rpm"]
         return result_dict
 
-    def run_fan(self, value, wait_time=0):
+    def run_fan(self, value):
         self.klipper.run_test_gcode("_TEST_FANS FAN_SPEED=" + value)
 
     def check_fan_state(self, set_val, fixture_dict):
@@ -575,7 +575,7 @@ class DevInfo:
         fixture.send_command(FrameType.Poll, dev_type, "1", frame)
         time.sleep(0.5)
         self.run_motor(dir)
-        time.sleep(2)
+        time.sleep(5)
 
     def req_encoder_info(self, dev_type, fixture, run_time_s):
         return self._stop_wait_dev_encoder_reply(fixture, dev_type, run_time_s)
@@ -618,10 +618,8 @@ class DevInfo:
         from core.utils.exception.ex_test import TestFailureException
         from core.utils.common import GlobalComm
 
-        # todo, 设一圈的脉冲数为 200*16*40=128000
-        stander_pulses = 216189
-        # tolerance = float(GlobalComm.setting_json["motor_encoder_tolerance"])
-        tolerance = 10000000
+        stander_pulses = 3500
+        tolerance = float(GlobalComm.setting_json["motor_encoder_tolerance"])
         log_dict = {}
         result_dict = {}
         has_exception = False
@@ -630,35 +628,35 @@ class DevInfo:
         a_loop_pulses_down = stander_pulses - tolerance
         tip = " stander: " + str(stander_pulses) + " tolerance: " + str(tolerance)
         for key, pulses in fixture_dict.items():
-            val = float(pulses)
+            val = abs(float(pulses)) 
+            
             log_dict[key] = "  cur pulses:  " + str(pulses) + tip
-            print(a_loop_pulses_down, val, a_loop_pulses_up)
+            print("up_val, encode_val, down_val",a_loop_pulses_down, val, a_loop_pulses_up)
             if a_loop_pulses_down <= val <= a_loop_pulses_up:
                 result_dict[key] = True
             else:
                 result_dict[key] = False
                 has_exception = True
 
-        print("check ", has_exception)
         if has_exception:
             raise TestFailureException(result_dict, log_dict)
 
-    def check_motor_dir(self, dir_dict_1, dir_dict_2):
+    def check_motor_dir(self, val_dict_1, val_dict_2):
         from core.utils.exception.ex_test import TestFailureException
 
-        check_cnt = 0
-        if len(set(dir_dict_1.values())) == 1 and len(set(dir_dict_2.values())) == 1:
-            check_cnt += 1
-
-        if dir_dict_1 == dir_dict_2:
-            check_cnt += 1
-
-        has_exception = check_cnt >= 2
+        i = 0
+        has_exception = False
+        for key, val in val_dict_1.items():
+            if float(val_dict_2[key] )* float(val) > 0:
+                has_exception = True
+                break
+            i += 1
+        
         if has_exception:
             # Make produce exception information
             log_dict = {}
             result_dict = {}
-            for key, dir in dir_dict_1.items():
+            for key, _ in val_dict_1.items():
                 log_dict[key] = "directional inconsistency"
                 result_dict[key] = False
             raise TestFailureException(result_dict, log_dict)
