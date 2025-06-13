@@ -342,7 +342,7 @@ class DevTest:
         fixture_state = self.fixture.is_connect(True)
 
         key = "fan_generic "
-        sample_time = 4  # second
+        sample_time = 8  # second
         wait_klipper_time = 4.3
         if klipper_state and fixture_state:
             try:
