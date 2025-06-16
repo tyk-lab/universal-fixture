@@ -211,8 +211,7 @@ class DevInfo:
             raise TestReplyException(
                 self.req_vol_info.__name__ + ": fixture reply null"
             )
-            
-        
+
         result_dict = self.format_vol_info(result_dict)
         print("req_vol_info: ", result_dict)
         return result_dict
@@ -225,7 +224,7 @@ class DevInfo:
         dev_check_dict = {}
         has_exception = False
         print("check vol", fixtur_dict)
-        #print("except vol", except_vol_dict)
+        # print("except vol", except_vol_dict)
 
         for key, value in fixtur_dict.items():
             parts = [s.strip() for s in value.split(",")]
@@ -628,10 +627,15 @@ class DevInfo:
         a_loop_pulses_down = stander_pulses - tolerance
         tip = " stander: " + str(stander_pulses) + " tolerance: " + str(tolerance)
         for key, pulses in fixture_dict.items():
-            val = abs(float(pulses)) 
-            
+            val = abs(float(pulses))
+
             log_dict[key] = "  cur pulses:  " + str(pulses) + tip
-            print("up_val, encode_val, down_val",a_loop_pulses_down, val, a_loop_pulses_up)
+            print(
+                "up_val, encode_val, down_val",
+                a_loop_pulses_down,
+                val,
+                a_loop_pulses_up,
+            )
             if a_loop_pulses_down <= val <= a_loop_pulses_up:
                 result_dict[key] = True
             else:
@@ -645,20 +649,17 @@ class DevInfo:
         from core.utils.exception.ex_test import TestFailureException
 
         i = 0
+        log_dict = {}
+        result_dict = {}
         has_exception = False
         for key, val in val_dict_1.items():
-            if float(val_dict_2[key] )* float(val) > 0:
-                has_exception = True
-                break
-            i += 1
-        
-        if has_exception:
-            # Make produce exception information
-            log_dict = {}
-            result_dict = {}
-            for key, _ in val_dict_1.items():
+            if float(val_dict_2[key]) * float(val) > 0:
                 log_dict[key] = "directional inconsistency"
+                has_exception = True
                 result_dict[key] = False
+            i += 1
+
+        if has_exception:
             raise TestFailureException(result_dict, log_dict)
 
     ############################## other Equipment Related ############################
