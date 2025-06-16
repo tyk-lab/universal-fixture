@@ -238,19 +238,21 @@ class DevTest:
                     init_th_dict = self.dev.req_th_info(self.fixture, True)
 
                     ##################### heat part #######################
-                    first_dict, second_dict = self.dev.control_heating_cooling(
+                    first_th_dict, second_th_dict = self.dev.control_heating_cooling(
                         self.fixture, True
                     )
                     vol_heat_dict = self.dev.req_vol_info(self.fixture, True)
-                    self.dev.check_heat(first_dict, second_dict, vol_heat_dict, True)
+                    self.dev.check_heat(
+                        first_th_dict, second_th_dict, vol_heat_dict, True
+                    )
 
                     ##################### cooling part #######################
-                    first_dict, second_dict = self.dev.control_heating_cooling(
+                    first_th_dict, second_th_dict = self.dev.control_heating_cooling(
                         self.fixture, False
                     )
                     vol_cooling_dict = self.dev.req_vol_info(self.fixture, True)
                     self.dev.check_heat(
-                        first_dict, second_dict, vol_cooling_dict, False
+                        first_th_dict, second_th_dict, vol_cooling_dict, False
                     )
 
                     ##################### show result #######################
@@ -412,7 +414,7 @@ class DevTest:
         extruder_key = "extruder"
         extruder_stepper_key = "extruder_stepper "
         manual_stepper_key = "manual_stepper "
-        
+
         if self.dev_dicts[extruder_key] != []:
             if self.dev_dicts[extruder_stepper_key] != []:
                 # Multi-motor motion must have extruder motor, contains extruder field
@@ -422,7 +424,7 @@ class DevTest:
             return extruder_key
         else:
             return manual_stepper_key
-        
+
     def test_motor(self):
         from core.utils.opt_log import GlobalLogger
         from core.utils.exception.ex_test import (
@@ -439,7 +441,7 @@ class DevTest:
         if klipper_state and fixture_state:
             try:
                 print("dev_dicts: ", self.dev_dicts)
-            
+
                 GlobalLogger.divider_head_log(" motor ")
 
                 val_dict_1, _ = self.dev.req_encoder_info(
@@ -449,7 +451,7 @@ class DevTest:
 
                 #  Positive motor rotation
                 self.dev.run_monitoring(poll_key, self.fixture, True)
-                val_dict_1, _  = self.dev.req_encoder_info(
+                val_dict_1, _ = self.dev.req_encoder_info(
                     poll_key, self.fixture, motor_run_time
                 )
                 self.dev.check_motor_distance(val_dict_1)
@@ -489,10 +491,16 @@ class DevTest:
         from core.utils.opt_log import GlobalLogger
         from core.utils.exception.ex_test import (
             TestFailureException,
+            TestReplyException,
         )
 
         fixture_state = self.fixture.is_connect(True)
-        key_tuple = ("3_3_vol", "5_vol", "12_vol", "24_vol")  #!Same name as the port file.
+        key_tuple = (
+            "3_3_vol",
+            "5_vol",
+            "12_vol",
+            "24_vol",
+        )  #!Same name as the port file.
         except_vol_dict = {
             key_tuple[0]: 3.3,
             key_tuple[1]: 5.0,
@@ -506,6 +514,8 @@ class DevTest:
                 vol_dict = self.dev.req_vol_info(self.fixture, False)
                 vol_fixture_dict = self.dev.check_vol(except_vol_dict, vol_dict)
                 self.show_keys_result(key_tuple, vol_fixture_dict)
+            except TestReplyException as e:
+                self._test_keys_failture_exception(e, key_tuple)
             except TestFailureException as e:
                 self._test_keys_failture_exception(e, key_tuple)
         else:

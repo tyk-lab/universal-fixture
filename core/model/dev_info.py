@@ -299,14 +299,14 @@ class DevInfo:
         self.klipper.run_test_gcode("_TEST_HEATS RUN=" + value)
 
     def control_heating_cooling(self, fixture, is_temp_up):
-        first_fixture_dict = self.req_th_info(fixture, True)
+        first_th_fixture_dict = self.req_th_info(fixture, True)
         time.sleep(1)
         self.run_heat("1" if is_temp_up else "0")
         time.sleep(6)  # Wait for the heater to stabilise
-        second_fixture_dict = self.req_th_info(fixture, True)
-        return first_fixture_dict, second_fixture_dict
+        second_th_fixture_dict = self.req_th_info(fixture, True)
+        return first_th_fixture_dict, second_th_fixture_dict
 
-    def check_heat(self, first_dict, second_dict, vol_dict, is_temp_up):
+    def check_heat(self, first_th_dict, second_th_dict, vol_dict, is_temp_up):
         from core.utils.exception.ex_test import TestFailureException
         from core.utils.common import GlobalComm
         from core.utils.opt_log import GlobalLogger
@@ -317,9 +317,9 @@ class DevInfo:
         dev_check_dict = {}
         has_exception = False
         check_cnt = 0
-        for key, value in first_dict.items():
-            first_th = float(first_dict[key])
-            second_th = float(second_dict[key])
+        for key, value in vol_dict.items():
+            first_th = float(first_th_dict[key])
+            second_th = float(second_th_dict[key])
 
             # 1. If it does not match the expected heating or cooling effect, there is an abnormality
             if is_temp_up and second_th > first_th + tolerance:
@@ -327,7 +327,7 @@ class DevInfo:
             elif is_temp_up == False and first_th > second_th + tolerance:
                 check_cnt += 1
 
-            print("check cnt1 ", check_cnt)
+            print("check_heat cnt1 ", check_cnt)
 
             # 2. Judging whether voltage is output when heating
             info_parts = vol_dict[key].split(",")[1]
@@ -337,7 +337,7 @@ class DevInfo:
             elif is_temp_up == False and 0 <= cur_vol <= 1:
                 check_cnt += 1
 
-            print("check cnt2 ", check_cnt)
+            print("check_heat cnt2 ", check_cnt)
             if check_cnt < 2:
                 has_exception = True
 
