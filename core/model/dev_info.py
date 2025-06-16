@@ -450,7 +450,7 @@ class DevInfo:
             result_dict = fixture.send_command_and_format_result(
                 FrameType.Request, "rgbwSQ"
             )
-            time.sleep(0.3)
+            time.sleep(0.5)
 
         if result_dict != None:
             result_dict = {
@@ -520,7 +520,8 @@ class DevInfo:
                         dev_check_dict[key] = False
                         has_exception = True
                 else:
-                    if not check_color_index >= 3:
+                    # todo, 测试值中，白色一般第一个值只有110多
+                    if not (check_color_index >= 2 and fixture_color_dict["red"] > 111):
                         dev_check_dict[key] = False
                         has_exception = True
             else:  # Devices that do not participate in the detection, directly default ok
