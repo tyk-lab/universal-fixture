@@ -440,13 +440,17 @@ class DevInfo:
         self.klipper.run_test_gcode(
             f"_TEST_RGBWS RED={color_dict['red']} GREEN={color_dict['green']} BLUE={color_dict['blue']} WHITE={color_dict['white']}"
         )
+        time.sleep(0.05)
 
     def req_rgb_raw_val(self, fixture):
         from core.utils.exception.ex_test import TestReplyException
 
-        result_dict = fixture.send_command_and_format_result(
-            FrameType.Request, "rgbwSQ"
-        )
+        result_dict = {}
+        for _ in range(3):
+            result_dict = fixture.send_command_and_format_result(
+                FrameType.Request, "rgbwSQ"
+            )
+            time.sleep(0.3)
 
         if result_dict != None:
             result_dict = {
