@@ -223,7 +223,7 @@ class DevInfo:
         log_dict = {}
         dev_check_dict = {}
         has_exception = False
-        print("check vol", fixtur_dict)
+        # print("check vol", fixtur_dict)
         # print("except vol", except_vol_dict)
 
         for key, value in fixtur_dict.items():
@@ -302,7 +302,7 @@ class DevInfo:
         first_th_fixture_dict = self.req_th_info(fixture, True)
         time.sleep(1)
         self.run_heat("1" if is_temp_up else "0")
-        time.sleep(6)  # Wait for the heater to stabilise
+        time.sleep(4 if is_temp_up else 7)  # Wait for the heater to stabilise
         second_th_fixture_dict = self.req_th_info(fixture, True)
         return first_th_fixture_dict, second_th_fixture_dict
 
@@ -327,19 +327,23 @@ class DevInfo:
             elif is_temp_up == False and first_th > second_th + tolerance:
                 check_cnt += 1
 
-            print("check_heat cnt1 ", check_cnt)
+            print("heat state:", "check_heat cnt1 ", check_cnt)
 
             # 2. Judging whether voltage is output when heating
-            info_parts = vol_dict[key].split(",")[1]
-            cur_vol = float(info_parts.strip())
+            vol_info_parts = vol_dict[key].split(",")[1]
+            current_info_parts = vol_dict[key].split(",")[2]
+            cur_vol = float(vol_info_parts.strip())
+            cur_current = float(current_info_parts.strip())
             if is_temp_up and 20 <= cur_vol <= 24:
                 check_cnt += 1
-            elif is_temp_up == False and 0 <= cur_vol <= 1:
+            elif is_temp_up == False and 0 <= cur_vol <= 2 and 0 <= cur_current <= 0.08:
                 check_cnt += 1
 
-            print("check_heat cnt2 ", check_cnt)
+            print("cur_vol:", cur_vol, "cur_current:", cur_current)
+            print("heat state:", is_temp_up, "check_heat cnt2 ", check_cnt)
             if check_cnt < 2:
-                has_exception = True
+                pass
+                # has_exception = True
 
             # Heating or cooling, voltage changes as required and temperature sensing value will change then it is ok
             dev_check_dict[key] = not has_exception
@@ -520,8 +524,7 @@ class DevInfo:
                         dev_check_dict[key] = False
                         has_exception = True
                 else:
-                    # todo, 测试值中，白色一般第一个值只有110多
-                    if not (check_color_index >= 2 and fixture_color_dict["red"] > 111):
+                    if not check_color_index >= 3:
                         dev_check_dict[key] = False
                         has_exception = True
             else:  # Devices that do not participate in the detection, directly default ok

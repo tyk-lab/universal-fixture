@@ -247,12 +247,12 @@ class DevTest:
                     )
 
                     ##################### cooling part #######################
-                    first_th_dict, second_th_dict = self.dev.control_heating_cooling(
+                    _, cool_second_th_dict = self.dev.control_heating_cooling(
                         self.fixture, False
                     )
                     vol_cooling_dict = self.dev.req_vol_info(self.fixture, True)
                     self.dev.check_heat(
-                        first_th_dict, second_th_dict, vol_cooling_dict, False
+                        second_th_dict, cool_second_th_dict, vol_cooling_dict, False
                     )
 
                     ##################### show result #######################
